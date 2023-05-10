@@ -14,8 +14,18 @@ lat = nc.variables['lat'][:]
 lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
-lon_min, lon_max = -75, -50
-lat_min, lat_max = 15, 30
+# Define the coordinates of the TC center
+tc_lat, tc_lon = 20.52, -65.3874
+
+# Define the size of the region to plot (in degrees) based on the TC center
+plot_size = 10.0
+
+# Calculate the minimum and maximum longitude and latitude values for the plot
+lon_min = tc_lon - plot_size/2 +3
+lon_max = tc_lon + plot_size/2
+lat_min = tc_lat - plot_size/2
+lat_max = tc_lat + plot_size/2
+
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -47,7 +57,7 @@ title_date = datetime.strptime('2022020200', '%Y%m%d%H')
 # plt.xlabel('Longitude')
 # plt.ylabel('Latitude')
 
-# Remove x and y axis info
+# # Remove x and y axis info
 ax.set_xticklabels([])
 ax.set_yticklabels([])
 ax.set_xticks([])
