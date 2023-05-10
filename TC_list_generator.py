@@ -9,5 +9,5 @@ with open(input_file, "r") as f_in, open(output_file, "w", newline="") as f_out:
     writer.writeheader()
     
     for row in reader:
-        if row["MLC_CLASS"] == "TS":
+        if row["USA_STATUS"] == "TS":
             writer.writerow(row)

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Open the NetCDF4 file
-nc = netCDF4.Dataset('DataSources\merg_2022020200_4km-pixel.nc4')
+nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090506_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
