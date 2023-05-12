@@ -25,7 +25,7 @@ def apply_sobel_filter(image):
     return gradient_magnitude, gradient_direction
 
 # Load the image and convert it to a numpy array
-image = cv2.imread('Screenshot 2023-05-10 at 3.57.41 pm.png')
+image = cv2.imread('my_plot.jpg')
 
 gradient_magnitude, gradient_direction = apply_sobel_filter(image)
 
