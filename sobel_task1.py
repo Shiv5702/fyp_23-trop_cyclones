@@ -29,4 +29,3 @@ image = cv2.imread('my_plot.jpg')
 
 gradient_magnitude, gradient_direction = apply_sobel_filter(image)
 
-print(gradient_magnitude)
