@@ -42,7 +42,6 @@ def convert_to_gradient_vectors(gradient_magnitude, gradient_direction):
 
 def calculate_DAV(gradient_vectors, radial_distance):
     deviations = []
-
     for k in range(len(gradient_vectors)):
         for j in range(len(gradient_vectors[k][-1])):
             # Convert gradient vector elements to numpy array for calculations
@@ -50,21 +49,21 @@ def calculate_DAV(gradient_vectors, radial_distance):
             # Normalize the gradient vector
             #normalized_gradient = gradient_vector / np.linalg.norm(gradient_vector)
             normalized_gradient = [gradient_vector[0] / 8, gradient_vector[1] / 8]
-
-            
+            if normalized_gradient[0] == 0 and normalized_gradient[1] == 0:
+                continue
             # Calculate the dot product
             dot_product = np.dot(normalized_gradient, radial_distance)
             
             # Check if all elements of the dot product array are within the valid range
             #if np.all((-1 <= dot_product) & (dot_product <= 1)):
             # Calculate the deviation angle
-            deviation_angle = np.arctan(dot_product)
-            deviations.append(deviation_angle)
+            deviation_angle = np.arccos(dot_product / (radial_distance * math.sqrt(normalized_gradient[0]**2 + normalized_gradient[1]**2)))
+            deviation_angle_deg = np.degrees(deviation_angle)
+            deviations.append(deviation_angle_deg)
     
     # Calculate the variance of the deviation angles if there are enough valid angles
 
     variance = np.var(deviations)
-
     
     return variance,deviations
 
@@ -75,11 +74,10 @@ def calculate_radial_line(center_x, center_y, pixel_x, pixel_y):
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
-     plt.hist(angles, bins=30, range=(0, 360), edgecolor='black')
+     plt.hist(angles, bins=10, range=(-360, 360), edgecolor='black')
      plt.xlabel('Angles (degrees)')
      plt.ylabel('Frequency')
      plt.title('Angle Histogram')
-     plt.grid(True)
      plt.show()
 # Get coordinates from netcdf4 file
 nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
@@ -134,14 +132,19 @@ radial_dist = 150
 
 
 
-variance,angle_list= calculate_DAV(gradient_vectors, 300)
+variance,angle_list= calculate_DAV(gradient_vectors, radial_dist)
 
 
 print("Length of angles", len(angle_list))
 print("First element", angle_list[0])
 print("Variance", variance)
 
-#plot_angle_histogram(angle_list)
+print("lenght of angle nested lsit: ", len(angle_list[0]))
+test_sample = angle_list[250000:-1]
+
+test_sampl_2 = angle_list[500:1500]
+
+plot_angle_histogram(test_sampl_2)
 
 
 
