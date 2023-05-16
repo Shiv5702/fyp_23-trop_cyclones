@@ -68,10 +68,56 @@ def calculate_DAV(gradient_vectors, radial_distance):
     
     return variance,deviations
 
+def calculate_DAV_RadialVectors(gradient_vectors, radial_lines):
+    deviations = []
+    for k in range(len(gradient_vectors)):
+        for j in range(len(gradient_vectors[k][-1])):
+            # Convert gradient vector elements to numpy array for calculations
+            gradient_vector = [gradient_vectors[k][0][j], gradient_vectors[k][1][j]]
+            # Normalize the gradient vector
+            #normalized_gradient = gradient_vector / np.linalg.norm(gradient_vector)
+            normalized_gradient = [gradient_vector[0] / 8, gradient_vector[1] / 8]
+            if normalized_gradient[0] == 0 and normalized_gradient[1] == 0:
+                continue
+            
+            if radial_lines[k][j][0] == 0 and radial_lines[k][j][1] == 0:
+                continue
+            
+            # Calculate the dot product
+            dot_product = np.dot(normalized_gradient, radial_lines[k][j])
+            
+            # Check if all elements of the dot product array are within the valid range
+            #if np.all((-1 <= dot_product) & (dot_product <= 1)):
+            # Calculate the deviation angle
+            deviation_angle = np.arccos(dot_product / (math.sqrt(radial_lines[k][j][0]**2 + radial_lines[k][j][1]**2) * math.sqrt(normalized_gradient[0]**2 + normalized_gradient[1]**2)))
+            deviation_angle_deg = np.degrees(deviation_angle)
+            deviations.append(deviation_angle_deg)
+    
+    # Calculate the variance of the deviation angles if there are enough valid angles
+
+    variance = np.var(deviations)
+    
+    return variance,deviations
 
 def calculate_radial_line(center_x, center_y, pixel_x, pixel_y):
     radial_line = [pixel_x - center_x, pixel_y - center_y]
     return radial_line
+
+def calculate_radial_vectors(image, lat, lon, radial_dist):
+    radial_vectors = []
+    w, h = image.size
+    for y in range(h):
+        vectors = []
+        for x in range(w):
+            pix_lat = lat_max + (y/h)*(lat_min - lat_max)
+            pix_lon = lon_min + (x/w)*(lon_max - lon_min)
+            if distance(lat, lon, pix_lat, pix_lon) <= radial_dist:
+                vectors.append(calculate_radial_line(lon, lat, pix_lon, pix_lat))
+            else:
+                vectors.append([0,0])
+        radial_vectors.append(vectors)
+
+    return radial_vectors
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
@@ -124,36 +170,30 @@ gradient_vectors = convert_to_gradient_vectors(gradient_magnitude, gradient_dire
 print("----------------------------------------------------------------------")
 
 # With different radial distances, calculate DAV
-radial_dist = 150
-# ref_lat, ref_lon = 20.52, -65.3874
-# for pixel_lat in lat_subset:
-#     for pixel_lon in lon_subset:    
-#         if distance(ref_lat, ref_lon, pixel_lat[0], pixel_lon[0]) <= radial_dist:
-#             pass
+radial_dist = 300
+ref_lat, ref_lon = 20, -80
+radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
 
-
-
-
-
-variance,angle_list= calculate_DAV(gradient_vectors, radial_dist)
-
+#variance,angle_list= calculate_DAV(gradient_vectors, radial_dist)
+variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
 
 print("Length of angles", len(angle_list))
-print("First element", angle_list[0])
+#print("First element", angle_list[0])
 print("Variance", variance  )
 
 #print("lenght of angle nested lsit: ", len(angle_list[0]))
 # test_sample = angle_list[250000:-1]
 
-test_sampl_2 = angle_list[2]
+#test_sampl_2 = angle_list[2]
 
 
 # print(angle_list[:5])
-print(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
+#print(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
 
 
 
-plot_angle_histogram(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
+#plot_angle_histogram(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
+plot_angle_histogram(angle_list[:100])
 
 
 
