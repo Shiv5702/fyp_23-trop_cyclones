@@ -2,7 +2,8 @@ import math
 import cv2
 import netCDF4
 import numpy as np
-from sobel_task1 import apply_sobel_filter
+import sobel_task1
+from PIL import Image
 import matplotlib.pyplot as plt
 
 """Calculate distance between lat and lon coordinates"""
@@ -74,7 +75,7 @@ def calculate_radial_line(center_x, center_y, pixel_x, pixel_y):
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
-     plt.hist(angles, bins=10, range=(-360, 360), edgecolor='black')
+     plt.hist(angles, bins=120, range=(-360, 360), edgecolor='black')
      plt.xlabel('Angles (degrees)')
      plt.ylabel('Frequency')
      plt.title('Angle Histogram')
@@ -107,8 +108,10 @@ lon_max_ind = lon_inds[-1]
 lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
 
 # Load the image and convert it to a numpy array
-image = cv2.imread('my_plot.jpg')
-gradient_magnitude, gradient_direction = apply_sobel_filter(image)
+#image = cv2.imread('my_plot.jpg')
+image = Image.open('my_plot.jpg')
+image_array = np.array(image)
+gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradient(image)
 
 # Convert magnitude and direction into a vector
 gradient_vectors = convert_to_gradient_vectors(gradient_magnitude, gradient_direction)
@@ -137,14 +140,20 @@ variance,angle_list= calculate_DAV(gradient_vectors, radial_dist)
 
 print("Length of angles", len(angle_list))
 print("First element", angle_list[0])
-print("Variance", variance)
+print("Variance", variance  )
 
-print("lenght of angle nested lsit: ", len(angle_list[0]))
-test_sample = angle_list[250000:-1]
+#print("lenght of angle nested lsit: ", len(angle_list[0]))
+# test_sample = angle_list[250000:-1]
 
-test_sampl_2 = angle_list[500:1500]
+test_sampl_2 = angle_list[2]
 
-plot_angle_histogram(test_sampl_2)
+
+# print(angle_list[:5])
+print(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
+
+
+
+plot_angle_histogram(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
 
 
 
