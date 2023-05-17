@@ -176,18 +176,13 @@ variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
 
 print("Length of angles", len(angle_list))
 print("Variance", variance)
-
-
-# print(angle_list[:5])
-#print(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
-
-
-
-#plot_angle_histogram(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
 plot_angle_histogram(angle_list)
 
-
-
 # Now Mapping deviation-angle variances 
-
-
+dav_array = np.zeros((len(lat_subset), len(lon_subset)))
+for lat_index in range(len(lat_subset)):
+    for lon_index in range(len(lon_subset)):
+        ref_lat, ref_lon = lat_subset[lat_index][0], lon_subset[lon_index][0]
+        radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
+        variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
+        dav_array.itemset((lat_index, lon_index), variance)
