@@ -111,6 +111,7 @@ def calculate_radial_vectors(image, lat, lon, radial_dist):
         for x in range(w):
             pix_lat = lat_max + (y/h)*(lat_min - lat_max)
             pix_lon = lon_min + (x/w)*(lon_max - lon_min)
+            # Use harvesine formula to check distance. If within, make radial line
             if distance(lat, lon, pix_lat, pix_lon) <= radial_dist:
                 vectors.append(calculate_radial_line(lon, lat, pix_lon, pix_lat))
             else:
@@ -163,14 +164,10 @@ gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradie
 gradient_vectors = convert_to_gradient_vectors(gradient_magnitude, gradient_direction)
 
 
-# print(lat_subset)
-# print(lon_subset)
-
-
 print("----------------------------------------------------------------------")
 
 # With different radial distances, calculate DAV
-radial_dist = 300
+radial_dist = 500
 ref_lat, ref_lon = 20, -80
 radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
 
@@ -178,13 +175,7 @@ radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
 variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
 
 print("Length of angles", len(angle_list))
-#print("First element", angle_list[0])
-print("Variance", variance  )
-
-#print("lenght of angle nested lsit: ", len(angle_list[0]))
-# test_sample = angle_list[250000:-1]
-
-#test_sampl_2 = angle_list[2]
+print("Variance", variance)
 
 
 # print(angle_list[:5])
@@ -193,7 +184,7 @@ print("Variance", variance  )
 
 
 #plot_angle_histogram(angle_list[(len(angle_list)//2):len(angle_list)//2 + 5])
-plot_angle_histogram(angle_list[:100])
+plot_angle_histogram(angle_list)
 
 
 
