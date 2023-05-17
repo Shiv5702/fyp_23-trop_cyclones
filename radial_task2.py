@@ -41,33 +41,6 @@ def convert_to_gradient_vectors(gradient_magnitude, gradient_direction):
     
     return gradient_vectors
 
-def calculate_DAV(gradient_vectors, radial_distance):
-    deviations = []
-    for k in range(len(gradient_vectors)):
-        for j in range(len(gradient_vectors[k][-1])):
-            # Convert gradient vector elements to numpy array for calculations
-            gradient_vector = [gradient_vectors[k][0][j], gradient_vectors[k][1][j]]
-            # Normalize the gradient vector
-            #normalized_gradient = gradient_vector / np.linalg.norm(gradient_vector)
-            normalized_gradient = [gradient_vector[0] / 8, gradient_vector[1] / 8]
-            if normalized_gradient[0] == 0 and normalized_gradient[1] == 0:
-                continue
-            # Calculate the dot product
-            dot_product = np.dot(normalized_gradient, radial_distance)
-            
-            # Check if all elements of the dot product array are within the valid range
-            #if np.all((-1 <= dot_product) & (dot_product <= 1)):
-            # Calculate the deviation angle
-            deviation_angle = np.arccos(dot_product / (radial_distance * math.sqrt(normalized_gradient[0]**2 + normalized_gradient[1]**2)))
-            deviation_angle_deg = np.degrees(deviation_angle)
-            deviations.append(deviation_angle_deg)
-    
-    # Calculate the variance of the deviation angles if there are enough valid angles
-
-    variance = np.var(deviations)
-    
-    return variance,deviations
-
 def calculate_DAV_RadialVectors(gradient_vectors, radial_lines):
     deviations = []
     for k in range(len(gradient_vectors)):
@@ -97,6 +70,36 @@ def calculate_DAV_RadialVectors(gradient_vectors, radial_lines):
 
     variance = np.var(deviations)
     
+    return variance,deviations
+
+def calculate_DAV_Efficient(gradient_vectors, img_width, img_height, ref_lat, ref_lon, rad_dist):
+    deviations = []
+    for y in range(len(gradient_vectors)):
+        for x in range(len(gradient_vectors[y][-1])):
+            # Convert gradient vector elements to numpy array for calculations
+            gradient_vector = [gradient_vectors[y][0][x], gradient_vectors[y][1][x]]
+            # Normalize the gradient vector
+            normalized_gradient = [gradient_vector[0] / 8, gradient_vector[1] / 8]
+            if normalized_gradient[0] == 0 and normalized_gradient[1] == 0:
+                continue
+            
+            # Check if pixel point is near enough to reference point
+            pix_lat = lat_max + (y/img_height)*(lat_min - lat_max)
+            pix_lon = lon_min + (x/img_width)*(lon_max - lon_min)
+            if distance(ref_lat, ref_lon, pix_lat, pix_lon) > rad_dist:
+                continue
+            radial_line = calculate_radial_line(ref_lon, ref_lat, pix_lon, pix_lat)
+            if radial_line[0] == 0 and radial_line[1] == 0:
+                continue
+            # Calculate the dot product
+            dot_product = np.dot(normalized_gradient, radial_line)
+            
+            # Calculate the deviation angle
+            deviation_angle = np.arccos(dot_product / (math.sqrt(radial_line[0]**2 + radial_line[1]**2) * math.sqrt(normalized_gradient[0]**2 + normalized_gradient[1]**2)))
+            deviation_angle_deg = np.degrees(deviation_angle)
+            deviations.append(deviation_angle_deg)
+    
+    variance = np.var(deviations)
     return variance,deviations
 
 def calculate_radial_line(center_x, center_y, pixel_x, pixel_y):
@@ -169,22 +172,21 @@ print("----------------------------------------------------------------------")
 # With different radial distances, calculate DAV
 radial_dist = 150
 ref_lat, ref_lon = 20, -80
+width, height = image.size 
 radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
-
-#variance,angle_list= calculate_DAV(gradient_vectors, radial_dist)
-variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
+variance,angle_list= calculate_DAV_Efficient(gradient_vectors, width, height, 
+                                                      ref_lat, ref_lon, radial_dist)
 
 print("Length of angles", len(angle_list))
 print("Variance", variance)
 plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
-width, height = image.size 
 dav_array = np.zeros((width, height))
 for y in range(height):
     for x in range(width):
         ref_lat = lat_max + (y/height)*(lat_min - lat_max)
         ref_lon = lon_min + (x/width)*(lon_max - lon_min)
-        radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
-        variance,angle_list = calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
+        variance,angle_list = calculate_DAV_Efficient(gradient_vectors, width, height, 
+                                                      ref_lat, ref_lon, radial_dist)
         dav_array.itemset((x, y), variance)
