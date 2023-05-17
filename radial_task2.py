@@ -167,7 +167,7 @@ gradient_vectors = convert_to_gradient_vectors(gradient_magnitude, gradient_dire
 print("----------------------------------------------------------------------")
 
 # With different radial distances, calculate DAV
-radial_dist = 500
+radial_dist = 150
 ref_lat, ref_lon = 20, -80
 radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
 
@@ -178,11 +178,13 @@ print("Length of angles", len(angle_list))
 print("Variance", variance)
 plot_angle_histogram(angle_list)
 
-# Now Mapping deviation-angle variances 
-dav_array = np.zeros((len(lat_subset), len(lon_subset)))
-for lat_index in range(len(lat_subset)):
-    for lon_index in range(len(lon_subset)):
-        ref_lat, ref_lon = lat_subset[lat_index][0], lon_subset[lon_index][0]
+# Now Mapping deviation-angle variances
+width, height = image.size 
+dav_array = np.zeros((width, height))
+for y in range(height):
+    for x in range(width):
+        ref_lat = lat_max + (y/height)*(lat_min - lat_max)
+        ref_lon = lon_min + (x/width)*(lon_max - lon_min)
         radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist)
-        variance,angle_list= calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
-        dav_array.itemset((lat_index, lon_index), variance)
+        variance,angle_list = calculate_DAV_RadialVectors(gradient_vectors, radial_lines)
+        dav_array.itemset((x, y), variance)
