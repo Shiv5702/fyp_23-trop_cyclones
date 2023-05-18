@@ -14,37 +14,28 @@ lat = nc.variables['lat'][:]
 lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
-#lon_min, lon_max = -90, -70
-#lat_min, lat_max = 15, 22
-
 lon_min, lon_max = -120, 0
 lat_min, lat_max = -5, 60
-
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
 lon_inds = np.where((lon >= lon_min) & (lon <= lon_max))[0]
 
-# Find the nearest index of the minimum and maximum values
-lat_min_ind = lat_inds[0]
-lat_max_ind = lat_inds[-1]
-lon_min_ind = lon_inds[0]
-lon_max_ind = lon_inds[-1]
-
 # Convert pixel resolution from 4km to 10km
 resolution_ratio = int(10 / 4)
 lon_inds = lon_inds[::resolution_ratio]
 lat_inds = lat_inds[::resolution_ratio]
-lon_min_ind = lon_inds[0]
-lon_max_ind = lon_inds[-1]
-lat_min_ind = lat_inds[0]
-lat_max_ind = lat_inds[-1]
+
+# Further subsample the indices to reduce the number of pixels
+subsampling_ratio = 5
+lon_inds = lon_inds[::subsampling_ratio]
+lat_inds = lat_inds[::subsampling_ratio]
 
 # Create a 2D meshgrid of latitudes and longitudes for the desired region
-lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
+lon_subset, lat_subset = np.meshgrid(lon[lon_inds], lat[lat_inds])
 
 # Select the variable values for the desired region
-var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
+var_subset = var[0, lat_inds, lon_inds]
 
 # Plot the variable using Matplotlib's pcolormesh function
 fig = plt.figure(figsize=(10, 8))
