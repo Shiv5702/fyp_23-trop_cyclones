@@ -21,6 +21,7 @@ lat_min, lat_max = -5, 60
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
 lon_inds = np.where((lon >= lon_min) & (lon <= lon_max))[0]
 
+"""
 # Convert pixel resolution from 4km to 10km
 resolution_ratio = int(10 / 4)
 lon_inds = lon_inds[::resolution_ratio]
@@ -29,16 +30,29 @@ lat_inds = lat_inds[::resolution_ratio]
 # Further subsample the indices to reduce the number of pixels
 subsampling_ratio = 5
 lon_inds = lon_inds[::subsampling_ratio]
-lat_inds = lat_inds[::subsampling_ratio]
+lat_inds = lat_inds[::subsampling_ratio]"""
 
+# Find the nearest index of the minimum and maximum values
+lat_min_ind = lat_inds[0]
+lat_max_ind = lat_inds[-1]
+lon_min_ind = lon_inds[0]
+lon_max_ind = lon_inds[-1]
+
+"""
 # Create a 2D meshgrid of latitudes and longitudes for the desired region
 lon_subset, lat_subset = np.meshgrid(lon[lon_inds], lat[lat_inds])
 
 # Select the variable values for the desired region
-var_subset = var[0, lat_inds, lon_inds]
+var_subset = var[0, lat_inds, lon_inds]"""
+
+# Create a 2D meshgrid of latitudes and longitudes for the desired region
+lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
+
+# Select the variable values for the desired region
+var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 
 # Plot the variable using Matplotlib's pcolormesh function
-fig = plt.figure(figsize=(5, 4))
+fig = plt.figure(figsize=(1, 0.5))
 ax = fig.add_subplot(1, 1, 1)
 im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='jet_r', vmin=np.min(var_subset), vmax=280)
 im.set_clim(vmin=np.min(var_subset), vmax=280)
