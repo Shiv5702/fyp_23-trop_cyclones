@@ -141,8 +141,8 @@ lat = nc.variables['lat'][:]
 lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
-lon_min, lon_max = -90, -70
-lat_min, lat_max = 15, 22
+lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -182,11 +182,11 @@ print("Variance", variance)
 plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
-dav_array = np.zeros((width, height))
+dav_array = np.zeros((height, width), dtype='d')
 for y in range(height):
     for x in range(width):
         ref_lat = lat_max + (y/height)*(lat_min - lat_max)
         ref_lon = lon_min + (x/width)*(lon_max - lon_min)
         variance,angle_list = calculate_DAV_Efficient(gradient_vectors, width, height, 
                                                       ref_lat, ref_lon, radial_dist)
-        dav_array.itemset((x, y), variance)
+        dav_array[y, x] = variance

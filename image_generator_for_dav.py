@@ -38,7 +38,7 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_inds], lat[lat_inds])
 var_subset = var[0, lat_inds, lon_inds]
 
 # Plot the variable using Matplotlib's pcolormesh function
-fig = plt.figure(figsize=(10, 8))
+fig = plt.figure(figsize=(5, 4))
 ax = fig.add_subplot(1, 1, 1)
 im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='jet_r', vmin=np.min(var_subset), vmax=280)
 im.set_clim(vmin=np.min(var_subset), vmax=280)
