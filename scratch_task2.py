@@ -7,63 +7,52 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 """Calculate distance between lat and lon coordinates"""
-def distance(point1, point2):
+def distance(lon1, lat1, lon2, lat2):
     radius = 6371  # earth radius (km)
-    lon1, lat1 = point1[0], point1[1]
-    lon2, lat2 = point2[0], point2[1]
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2) * math.sin(dlat / 2) +
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
-         math.sin(dlon / 2) * math.sin(dlon / 2))
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    dlat = np.radians(lat2 - lat1)
+    dlon = np.radians(lon2 - lon1)
+    a = (np.sin(dlat / 2) * np.sin(dlat / 2) +
+         np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) *
+         np.sin(dlon / 2) * np.sin(dlon / 2))
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     d = radius * c
 
     return d
 
-def convert_to_gradient_vectors(gradient_magnitude, gradient_direction):
-    gradient_vectors = []
-    
+def convert_to_gradient_vectors(gradient_magnitude, gradient_direction, w, h):
+    gradient_x = np.full((h*w), 0, dtype='d')
+    gradient_y = np.full((h*w), 0, dtype='d')
     # Iterate over each pixel
     for i in range(len(gradient_magnitude)):
-        magnitude = gradient_magnitude[i]
-        direction = gradient_direction[i]
-        
-        # Convert direction from degrees to radians
-        direction_rad = np.radians(direction)
-        
-        # Calculate the x and y components of the gradient vector
-        x_component = magnitude * np.cos(direction_rad)
-        y_component = magnitude * np.sin(direction_rad)
-        
-        # Create the gradient vector as [x_component, y_component]
-        gradient_vector = [x_component, y_component]
-        gradient_vectors.append(gradient_vector)
+        for j in range(len(gradient_magnitude[i])):
+            magnitude = gradient_magnitude[i,j]
+            direction = gradient_direction[i,j]
+            
+            # Convert direction from degrees to radians
+            direction_rad = np.radians(direction)
+            
+            # Calculate the x and y components of the gradient vector
+            x_component = magnitude * np.cos(direction_rad)
+            y_component = magnitude * np.sin(direction_rad)
+            
+            # Create the gradient vector as [x_component, y_component]
+            gradient_x[i*w + j] = x_component 
+            gradient_y[i*w + j] = y_component
     
-    return gradient_vectors
+    return gradient_x, gradient_y
 
-# Normalizes gradients
-def normalize_gradients(gradient_vectors, width, height):
-    norm_grad_vectors = []
-    for k in range(len(gradient_vectors)):
-        vector = []
-        for j in range(len(gradient_vectors[k][-1])):
-            vector.append((gradient_vectors[k][0][j] / 8, 
-                            gradient_vectors[k][1][j] / 8))
-        norm_grad_vectors.append(vector)
-
-    return norm_grad_vectors
-
-def calculate_DAV_Numpy(gradient_vectors, radial_lines):
+def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     
     # Calculate the dot product
-    dot_product = np.dot(gradient_vectors, radial_lines)
-    grad_mag = np.sqrt(np.dot(gradient_vectors, gradient_vectors))
-    rad_mag = np.sqrt(np.dot(radial_lines, radial_lines))
-    ind = np.where(grad_mag > 0 & rad_mag > 0)
+    #dot_product = np.dot(gradient_vectors, radial_lines)
+    dot_product = gradient_x*radial_x + gradient_y*radial_y
+    grad_mag = np.sqrt(gradient_x*gradient_x + gradient_y*gradient_y)
+    rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
+    ind = np.where(grad_mag > 0)
 
     # Calculate the deviation angle
-    deviation_angle = np.arccos(dot_product[ind] / (grad_mag[ind] * rad_mag[ind]))
+    cos_ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
+    deviation_angle = np.arccos(cos_ratios)
     deviations = np.degrees(deviation_angle)
     variance = np.var(deviations)
     
@@ -99,18 +88,20 @@ def calculate_DAV_Efficient(gradient_vectors, img_width, img_height, ref_lat, re
     variance = np.var(deviations)
     return variance,deviations
 
-def calculate_radial_line(center, pixel):
-    center_x, center_y = center[0], center[1]
-    pixel_x, pixel_y = pixel[0], pixel[1]
+def calculate_radial_line(center_x, center_y, pixel_x, pixel_y):
     radial_line = (pixel_x - center_x, pixel_y - center_y)
     return radial_line
 
 def numpy_coords(image):
     w, h = image.size
-    coords = np.full((h*w), 0, dtype='f,f')
-    for i in range(h*w):
-        coords[i] = convert_to_coord(i, w, h)
-    return coords
+    lat_coords = np.full((h*w), 0, dtype='d')
+    lon_coords = np.full((h*w), 0, dtype='d')
+    for pixel_ind in range(h*w):
+        x = pixel_ind % w
+        y = pixel_ind / w
+        lat_coords[pixel_ind] = lat_max + (y/h)*(lat_min - lat_max)
+        lon_coords[pixel_ind] = lon_min + (x/w)*(lon_max - lon_min)
+    return lon_coords, lat_coords
 
 def convert_to_coord(pixel_ind, w, h):
     x = pixel_ind % w
@@ -119,12 +110,14 @@ def convert_to_coord(pixel_ind, w, h):
     pix_lon = lon_min + (x/w)*(lon_max - lon_min)
     return (pix_lon, pix_lat)
 
-def calculate_radial_vectors(image, lat, lon, radial_dist, coords):
+def calculate_radial_vectors(image, lat, lon, radial_dist, lon_lst, lat_lst):
     w, h = image.size
-    radial_vectors = np.where(distance((lon, lat), coords) <= radial_dist, 
-                              calculate_radial_line(coords, (lon, lat)), (0,0))
+    radial_vectors_x = lon - lon_lst 
+    radial_vectors_y = lat - lat_lst
+    radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
+                          (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
 
-    return radial_vectors
+    return radial_vectors_x, radial_vectors_y, radial_ind
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
@@ -163,11 +156,13 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 # Load the image and convert it to a numpy array
 #image = cv2.imread('my_plot.jpg')
 image = Image.open('my_plot.jpg')
+width, height = image.size 
 image_array = np.array(image)
 gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradient(image)
 
 # Convert magnitude and direction into a vector
-gradient_vectors = convert_to_gradient_vectors(gradient_magnitude, gradient_direction)
+grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
+                                             width, height)
 
 
 print("----------------------------------------------------------------------")
@@ -176,20 +171,21 @@ print("----------------------------------------------------------------------")
 radial_dist = 150
 ref_lat, ref_lon = 20, -80
 width, height = image.size 
-coordinates = numpy_coords(image)
-radial_lines = calculate_radial_vectors(image, ref_lat, ref_lon, radial_dist, coordinates)
-norm_grad = normalize_gradients(gradient_vectors, width, height)
-variance,angle_list= calculate_DAV_Numpy(norm_grad, radial_lines)
+lon_pts, lat_pts = numpy_coords(image)
+radial_x, radial_y, ind = calculate_radial_vectors(image, ref_lat, ref_lon, 
+                                                   radial_dist, lon_pts, lat_pts)
+variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
 print("Length of angles", len(angle_list))
 print("Variance", variance)
 plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
-"""dav_array = np.zeros((width, height))
+dav_array = np.zeros((width, height), dtype='d')
 for y in range(height):
     for x in range(width):
         ref_lat = lat_max + (y/height)*(lat_min - lat_max)
         ref_lon = lon_min + (x/width)*(lon_max - lon_min)
-        variance,angle_list = calculate_DAV_Efficient(gradient_vectors, width, height, 
-                                                      ref_lat, ref_lon, radial_dist)
-        dav_array.itemset((x, y), variance)"""
+        radial_x, radial_y, ind = calculate_radial_vectors(image, ref_lat, ref_lon, 
+                                                   radial_dist, lon_pts, lat_pts)
+        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
+        dav_array[x, y] = variance
