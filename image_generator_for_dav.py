@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 # Open the NetCDF4 file
-nc = netCDF4.Dataset('fyp_23-trop_cyclones/DataSources/merg_2022092606_4km-pixel.nc4')
+nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']

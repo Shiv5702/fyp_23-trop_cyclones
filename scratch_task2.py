@@ -5,6 +5,7 @@ import numpy as np
 import sobel_task1
 from PIL import Image
 import matplotlib.pyplot as plt
+import threading
 
 """Calculate distance between lat and lon coordinates"""
 def distance(lon1, lat1, lon2, lat2):
@@ -42,9 +43,7 @@ def convert_to_gradient_vectors(gradient_magnitude, gradient_direction, w, h):
     return gradient_x, gradient_y
 
 def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
-    
     # Calculate the dot product
-    #dot_product = np.dot(gradient_vectors, radial_lines)
     dot_product = gradient_x*radial_x + gradient_y*radial_y
     grad_mag = np.sqrt(gradient_x*gradient_x + gradient_y*gradient_y)
     rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
@@ -54,7 +53,7 @@ def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     cos_ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
     deviation_angle = np.arccos(cos_ratios)
     deviations = np.degrees(deviation_angle)
-    variance = np.var(deviations)
+    variance = np.nanvar(deviations)
     
     return variance,deviations
 
@@ -98,7 +97,7 @@ def numpy_coords(image):
     lon_coords = np.full((h*w), 0, dtype='d')
     for pixel_ind in range(h*w):
         x = pixel_ind % w
-        y = pixel_ind / w
+        y = pixel_ind // w
         lat_coords[pixel_ind] = lat_max + (y/h)*(lat_min - lat_max)
         lon_coords[pixel_ind] = lon_min + (x/w)*(lon_max - lon_min)
     return lon_coords, lat_coords
@@ -110,8 +109,7 @@ def convert_to_coord(pixel_ind, w, h):
     pix_lon = lon_min + (x/w)*(lon_max - lon_min)
     return (pix_lon, pix_lat)
 
-def calculate_radial_vectors(image, lat, lon, radial_dist, lon_lst, lat_lst):
-    w, h = image.size
+def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst):
     radial_vectors_x = lon - lon_lst 
     radial_vectors_y = lat - lat_lst
     radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
@@ -121,11 +119,23 @@ def calculate_radial_vectors(image, lat, lon, radial_dist, lon_lst, lat_lst):
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
-     plt.hist(angles, bins=120, range=(-360, 360), edgecolor='black')
+     plt.hist(angles, bins=120, range=(-90, 360), edgecolor='black')
      plt.xlabel('Angles (degrees)')
      plt.ylabel('Frequency')
      plt.title('Angle Histogram')
      plt.show()
+
+def get_variance(start, end):
+    for pixel_ind in range(start, end):
+        x = pixel_ind % width
+        y = pixel_ind // width
+        ref_lat = lat_max + (y/height)*(lat_min - lat_max)
+        ref_lon = lon_min + (x/width)*(lon_max - lon_min)
+        radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
+                                                radial_dist, lon_pts, lat_pts)
+        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
+        dav_array[y, x] = variance
+
 # Get coordinates from netcdf4 file
 nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
 
@@ -137,8 +147,8 @@ lat = nc.variables['lat'][:]
 lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
-lon_min, lon_max = -90, -70
-lat_min, lat_max = 15, 22
+lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -172,20 +182,26 @@ radial_dist = 150
 ref_lat, ref_lon = 20, -80
 width, height = image.size 
 lon_pts, lat_pts = numpy_coords(image)
-radial_x, radial_y, ind = calculate_radial_vectors(image, ref_lat, ref_lon, 
+radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
                                                    radial_dist, lon_pts, lat_pts)
 variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
-print("Length of angles", len(angle_list))
 print("Variance", variance)
 plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
-dav_array = np.zeros((width, height), dtype='d')
-for y in range(height):
-    for x in range(width):
-        ref_lat = lat_max + (y/height)*(lat_min - lat_max)
-        ref_lon = lon_min + (x/width)*(lon_max - lon_min)
-        radial_x, radial_y, ind = calculate_radial_vectors(image, ref_lat, ref_lon, 
-                                                   radial_dist, lon_pts, lat_pts)
-        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
-        dav_array[x, y] = variance
+dav_array = np.zeros((height, width), dtype='d')
+splits = 100
+split_size = (width*height) // splits                                       
+threads = []                                                                
+for i in range(splits):                                                 
+    # determine the indices of the list this thread will handle             
+    start = i * split_size                                                  
+    # special case on the last chunk to account for uneven splits           
+    end = (width*height) if i+1 == splits else (i+1) * split_size                 
+    # create the thread                                                     
+    threads.append(                                                         
+        threading.Thread(target=get_variance, args=(start, end)))         
+    threads[-1].start()
+
+for t in range(len(threads)):
+    threads[t].join()
