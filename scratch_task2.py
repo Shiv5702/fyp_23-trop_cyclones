@@ -122,13 +122,35 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst):
 
     return radial_vectors_x, radial_vectors_y, radial_ind
 
-# # Histogram of the dav angles
+# Histogram of the dav angles
 def plot_angle_histogram(angles):
      plt.hist(angles, bins=120, range=(-90, 90), edgecolor='black')
      plt.xlabel('Angles (degrees)')
      plt.ylabel('Frequency')
      plt.title('Angle Histogram')
      plt.show()
+
+# This is where the thread can make more threads to split the pixel workload
+def split_pixel_indices(start, end):
+    splits = 10
+    split_size = (end - start) // splits
+    if split_size == 0:
+        splits = end - start
+        split_size = (end - start) // splits                                  
+
+    threads = []                                                                
+    for i in range(splits):                                                 
+        # determine the indices of the list this thread will handle             
+        start_ind = i * split_size + start                                                 
+        # special case on the last chunk to account for uneven splits           
+        end_ind = end if i+1 == splits else ((i+1) * split_size + start)           
+        # create the thread                                                     
+        threads.append(                                                         
+            threading.Thread(target=get_variance, args=(start_ind, end_ind)))         
+        threads[-1].start()
+
+    for t in range(len(threads)):
+        threads[t].join()
 
 def get_variance(start, end):
     for pixel_ind in range(start, end):
@@ -169,7 +191,6 @@ lon_max_ind = lon_inds[-1]
 lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
 
 # Load the image and convert it to a numpy array
-#image = cv2.imread('my_plot.jpg')
 image = Image.open('my_plot.jpg')
 width, height = image.size 
 image_array = np.array(image)
@@ -178,6 +199,23 @@ gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradie
 # Convert magnitude and direction into a vector
 grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
                                              width, height)
+
+
+# Plotting the gradient vectors
+def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=10, arrow_width=0.5):
+    plt.imshow(image, cmap='gray')
+    for i in range(len(gradient_x)):
+        x = i % w
+        y = i // w
+        dx = gradient_x[i] * scale
+        dy = gradient_y[i] * scale
+        plt.arrow(x, y, dx, dy, width=arrow_width, color='red')
+    plt.axis('off')
+    plt.show()
+
+# Plotting the grad vectors here 
+#m = plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height, scale=10, arrow_width=0.5)
+
 
 # With different radial distances, calculate DAV
 radial_dist = 150
@@ -188,11 +226,12 @@ radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon,
                                                    radial_dist, lon_pts, lat_pts)
 variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
 print("Variance", variance)
+print("Image size", image.size)
 plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
 dav_array = np.zeros((height, width), dtype='d')
-splits = 100
+splits = 10000
 split_size = (width*height) // splits
 if split_size == 0:
     splits = width*height
@@ -206,10 +245,13 @@ for i in range(splits):
     end = (width*height) if i+1 == splits else (i+1) * split_size                 
     # create the thread                                                     
     threads.append(                                                         
-        threading.Thread(target=get_variance, args=(start, end)))         
+        threading.Thread(target=split_pixel_indices, args=(start, end)))         
     threads[-1].start()
 
 for t in range(len(threads)):
     threads[t].join()
+print("DAV calculations have finished")
 
-print(dav_array)
+
+# ------------------------------------------------
+

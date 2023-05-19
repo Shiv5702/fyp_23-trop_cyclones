@@ -52,7 +52,7 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 
 # Plot the variable using Matplotlib's pcolormesh function
-fig = plt.figure(figsize=(1, 0.5))
+fig = plt.figure(figsize=(5, 3))
 ax = fig.add_subplot(1, 1, 1)
 im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='jet_r', vmin=np.min(var_subset), vmax=280)
 im.set_clim(vmin=np.min(var_subset), vmax=280)
