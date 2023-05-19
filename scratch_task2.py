@@ -50,12 +50,17 @@ def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     ind = np.where(grad_mag > 0)
 
     # Calculate the deviation angle
-    cos_ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
-    deviation_angle = np.arccos(cos_ratios)
+    deviation_angle = np.arccos(dot_product[ind] / (grad_mag[ind] * rad_mag[ind]))
     deviations = np.degrees(deviation_angle)
-    variance = np.nanvar(deviations)
+    angles = np.where(deviations <= 90, deviations, deviations - 180)
+
+    # Calculate variance if there are deviation angles
+    if angles.size > 0:
+        variance = np.nanvar(angles)
+    else:
+        variance = 0
     
-    return variance,deviations
+    return variance,angles
 
 def calculate_DAV_Efficient(gradient_vectors, img_width, img_height, ref_lat, ref_lon, rad_dist):
     deviations = []
@@ -119,7 +124,7 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst):
 
 # # Histogram of the dav angles
 def plot_angle_histogram(angles):
-     plt.hist(angles, bins=120, range=(-90, 360), edgecolor='black')
+     plt.hist(angles, bins=120, range=(-90, 90), edgecolor='black')
      plt.xlabel('Angles (degrees)')
      plt.ylabel('Frequency')
      plt.title('Angle Histogram')
@@ -174,9 +179,6 @@ gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradie
 grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
                                              width, height)
 
-
-print("----------------------------------------------------------------------")
-
 # With different radial distances, calculate DAV
 radial_dist = 150
 ref_lat, ref_lon = 20, -80
@@ -191,7 +193,11 @@ plot_angle_histogram(angle_list)
 # Now Mapping deviation-angle variances
 dav_array = np.zeros((height, width), dtype='d')
 splits = 100
-split_size = (width*height) // splits                                       
+split_size = (width*height) // splits
+if split_size == 0:
+    splits = width*height
+    split_size = (width*height) // splits                                  
+
 threads = []                                                                
 for i in range(splits):                                                 
     # determine the indices of the list this thread will handle             
@@ -205,3 +211,5 @@ for i in range(splits):
 
 for t in range(len(threads)):
     threads[t].join()
+
+print(dav_array)
