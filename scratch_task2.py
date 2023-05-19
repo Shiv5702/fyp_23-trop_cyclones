@@ -231,7 +231,7 @@ plot_angle_histogram(angle_list)
 
 # Now Mapping deviation-angle variances
 dav_array = np.zeros((height, width), dtype='d')
-splits = 10000
+splits = 1000
 split_size = (width*height) // splits
 if split_size == 0:
     splits = width*height
