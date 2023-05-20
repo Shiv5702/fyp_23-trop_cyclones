@@ -1,5 +1,5 @@
 import math
-import cv2
+import dav_map
 import netCDF4
 import numpy as np
 import sobel_task1
@@ -251,7 +251,7 @@ for i in range(splits):
 for t in range(len(threads)):
     threads[t].join()
 print("DAV calculations have finished")
-
+dav_map.generate_deviation_angle_variance_map(dav_array)
 
 # ------------------------------------------------
 
