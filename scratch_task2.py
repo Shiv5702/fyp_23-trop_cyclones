@@ -49,8 +49,13 @@ def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
     ind = np.where(grad_mag > 0)
 
+    # Clip the ratios to be in range between -1 and 1
+    ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
+    ratios = np.where(ratios >= -1, ratios, -1)
+    ratios = np.where(ratios <= 1, ratios, 1)
+
     # Calculate the deviation angle
-    deviation_angle = np.arccos(dot_product[ind] / (grad_mag[ind] * rad_mag[ind]))
+    deviation_angle = np.arccos(ratios)
     deviations = np.degrees(deviation_angle)
     angles = np.where(deviations <= 90, deviations, deviations - 180)
 
@@ -100,12 +105,16 @@ def numpy_coords(image):
     w, h = image.size
     lat_coords = np.full((h*w), 0, dtype='d')
     lon_coords = np.full((h*w), 0, dtype='d')
+    x_coords = np.full((h*w), 0, dtype='d')
+    y_coords = np.full((h*w), 0, dtype='d')
     for pixel_ind in range(h*w):
         x = pixel_ind % w
         y = pixel_ind // w
         lat_coords[pixel_ind] = lat_max + (y/h)*(lat_min - lat_max)
         lon_coords[pixel_ind] = lon_min + (x/w)*(lon_max - lon_min)
-    return lon_coords, lat_coords
+        x_coords[pixel_ind] = x
+        y_coords[pixel_ind] = y
+    return lon_coords, lat_coords, x_coords, y_coords
 
 def convert_to_coord(pixel_ind, w, h):
     x = pixel_ind % w
@@ -114,9 +123,13 @@ def convert_to_coord(pixel_ind, w, h):
     pix_lon = lon_min + (x/w)*(lon_max - lon_min)
     return (pix_lon, pix_lat)
 
-def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst):
-    radial_vectors_x = lon - lon_lst 
-    radial_vectors_y = lat - lat_lst
+def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_lst):
+    ref_x = ((lon - lon_min)/(lon_max - lon_min))*width
+    ref_y = ((lat - lat_max)/(lat_min - lat_max))*height
+
+    # Calculate radial vectors using image pixel coordinates
+    radial_vectors_x = ref_x - x_lst 
+    radial_vectors_y = ref_y - y_lst
     radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
                           (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
 
@@ -159,7 +172,7 @@ def get_variance(start, end):
         ref_lat = lat_max + (y/height)*(lat_min - lat_max)
         ref_lon = lon_min + (x/width)*(lon_max - lon_min)
         radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
-                                                radial_dist, lon_pts, lat_pts)
+                                                radial_dist, lon_pts, lat_pts, x_pts, y_pts)
         variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
         dav_array[y, x] = variance
 
@@ -194,11 +207,13 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 image = Image.open('my_plot.jpg')
 width, height = image.size 
 image_array = np.array(image)
-gradient_magnitude, gradient_direction = sobel_task1.calculate_brightness_gradient(image)
+gradient_x, gradient_y = sobel_task1.calculate_brightness_gradient(image)
+grad_x = np.reshape(gradient_x, width * height)
+grad_y = np.reshape(gradient_y, width * height)
 
 # Convert magnitude and direction into a vector
-grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
-                                             width, height)
+"""grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
+                                             width, height)"""
 
 
 # Plotting the gradient vectors
@@ -214,16 +229,16 @@ def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=10
     plt.show()
 
 # Plotting the grad vectors here 
-#m = plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height, scale=10, arrow_width=0.5)
+#plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height, scale=10, arrow_width=0.5)
 
 
 # With different radial distances, calculate DAV
 radial_dist = 150
 ref_lat, ref_lon = 20, -80
 width, height = image.size 
-lon_pts, lat_pts = numpy_coords(image)
+lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
 radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
-                                                   radial_dist, lon_pts, lat_pts)
+                                                   radial_dist, lon_pts, lat_pts, x_pts, y_pts)
 variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
 print("Variance", variance)
 print("Image size", image.size)

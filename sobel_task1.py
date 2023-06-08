@@ -64,7 +64,8 @@ def calculate_brightness_gradient(image):
     gradient_magnitude = np.sqrt(gradient_x**2 + gradient_y**2)
     gradient_direction = np.arctan2(gradient_y, gradient_x)
 
-    return gradient_magnitude, gradient_direction
+    #return gradient_magnitude, gradient_direction
+    return gradient_x, gradient_y
 
 
 
