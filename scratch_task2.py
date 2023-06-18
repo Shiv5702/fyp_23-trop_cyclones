@@ -217,7 +217,7 @@ grad_y = np.reshape(gradient_y, width * height)
 
 
 # Plotting the gradient vectors
-def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=10, arrow_width=0.5):
+def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=0.01, arrow_width=0.1):
     plt.imshow(image, cmap='gray')
     for i in range(len(gradient_x)):
         x = i % w
@@ -229,7 +229,7 @@ def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=10
     plt.show()
 
 # Plotting the grad vectors here 
-#plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height, scale=10, arrow_width=0.5)
+plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
 
 
 # With different radial distances, calculate DAV
