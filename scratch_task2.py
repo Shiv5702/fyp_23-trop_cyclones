@@ -129,7 +129,7 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_l
 
     # Calculate radial vectors using image pixel coordinates
     radial_vectors_x = ref_x - x_lst 
-    radial_vectors_y = ref_y - y_lst
+    radial_vectors_y = y_lst - ref_y
     radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
                           (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
 
