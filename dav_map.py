@@ -6,6 +6,9 @@ def generate_deviation_angle_variance_map(dav_values):
     # Calculate image dimensions
     image_height, image_width = dav_values.shape
     cmap = 'gray'  # Use a grayscale colormap
+
+    # flip vertically to correlate with coordinates properly as the y-direction from image is different
+    dav_values = np.flipud(dav_values)
     
     # Create a normalization instance to map DAV values
     norm = mcolors.Normalize(vmin=np.min(dav_values), vmax=np.max(dav_values))
