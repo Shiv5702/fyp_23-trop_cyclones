@@ -7,7 +7,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import threading
 
-"""Calculate distance between lat and lon coordinates"""
+"""Calculate distance between lat and lon coordinates with harvesine"""
 def distance(lon1, lat1, lon2, lat2):
     radius = 6371  # earth radius (km)
     dlat = np.radians(lat2 - lat1)
@@ -19,6 +19,12 @@ def distance(lon1, lat1, lon2, lat2):
     d = radius * c
 
     return d
+
+"""Calculate distance between lat and lon coordinates without harvesine"""
+def dist_noHarv(lon1, lat1, lon2, lat2):
+    c = 111.325
+    d = ((np.abs(lon1 - lon2) * c)**2) + ((np.abs(lat1 - lat2) * (1/np.cos(1)) * c)**2)
+    return np.sqrt(d)
 
 def convert_to_gradient_vectors(gradient_magnitude, gradient_direction, w, h):
     gradient_x = np.full((h*w), 0, dtype='d')
@@ -130,8 +136,8 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_l
     # Calculate radial vectors using image pixel coordinates
     radial_vectors_x = ref_x - x_lst 
     radial_vectors_y = y_lst - ref_y
-    radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
-                          (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
+    radial_ind = np.where((0 < dist_noHarv(lon, lat, lon_lst, lat_lst)) & 
+                          (dist_noHarv(lon, lat, lon_lst, lat_lst) <= radial_dist))
 
     return radial_vectors_x, radial_vectors_y, radial_ind
 
