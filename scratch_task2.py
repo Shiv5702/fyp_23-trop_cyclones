@@ -212,7 +212,7 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 # Load the image and convert it to a numpy array
 image = Image.open('my_plot.jpg')
 width, height = image.size 
-image_gray = image.convert('L')
+image_gray = np.array(image.convert('L'))
 gradient_x, gradient_y = sobel_task1.sobel_with_cv2(image)
 grad_x = np.reshape(gradient_x, width * height)
 grad_y = np.reshape(gradient_y, width * height)
