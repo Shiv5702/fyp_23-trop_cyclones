@@ -20,36 +20,45 @@ def apply_sobel_filter(image):
     gradient_y = convolve2d(image, sobel_y, mode='same', boundary='symm') / 8.0
 
     # Calculate total gradient magnitude and direction
-    gradient_magnitude = np.sqrt(np.square(gradient_x) + np.square(gradient_y))
-    gradient_direction = np.arctan2(gradient_y, gradient_x)
+    #gradient_magnitude = np.sqrt(np.square(gradient_x) + np.square(gradient_y))
+    #gradient_direction = np.arctan2(gradient_y, gradient_x)
 
-    return gradient_magnitude, gradient_direction
+    return gradient_x, gradient_y
 
 # Load the image and convert it to a numpy array
 image = cv2.imread('my_plot.jpg')
 
 gradient_magnitude, gradient_direction = apply_sobel_filter(image)
 
+def sobel_with_cv2(image):
+    # Convert the image to grayscale if necessary
+     if image.layers > 2:
+         image = np.mean(image, axis=2)
+
+     # Compute the gradient in the x and y directions
+     gradient_x = cv2.Sobel(image, cv2.CV_64F, dx=1, dy=0)
+     gradient_y = cv2.Sobel(image, cv2.CV_64F, dx=0, dy=1)
+
+     return gradient_x, gradient_y
 
 
+def another_sobel(image):
 
-# def another_sobel(image):
+     # Convert the image to grayscale if necessary
+     if image.layers > 2:
+         image = np.mean(image, axis=2)
 
-#     # Convert the image to grayscale if necessary
-#     if len(image.shape) > 2:
-#         image = np.mean(image, axis=2)
+     # Compute the gradient in the x and y directions
+     gradient_x = ndimage.sobel(image, axis=1)
+     gradient_y = ndimage.sobel(image, axis=0)
 
-#     # Compute the gradient in the x and y directions
-#     gradient_x = ndimage.sobel(image, axis=1)
-#     gradient_y = ndimage.sobel(image, axis=0)
+     # Compute the gradient magnitude
+     gradient_magnitude = np.hypot(gradient_x, gradient_y)
 
-#     # Compute the gradient magnitude
-#     gradient_magnitude = np.hypot(gradient_x, gradient_y)
+     # Compute the gradient vectors
+     gradient_vectors = np.arctan2(gradient_y, gradient_x)
 
-#     # Compute the gradient vectors
-#     gradient_vectors = np.arctan2(gradient_y, gradient_x)
-
-#     return gradient_magnitude, gradient_vectors
+     return gradient_x, gradient_y
 
 
 def calculate_brightness_gradient(image):

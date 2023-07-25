@@ -136,8 +136,8 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_l
     # Calculate radial vectors using image pixel coordinates
     radial_vectors_x = ref_x - x_lst 
     radial_vectors_y = y_lst - ref_y
-    radial_ind = np.where((0 < dist_noHarv(lon, lat, lon_lst, lat_lst)) & 
-                          (dist_noHarv(lon, lat, lon_lst, lat_lst) <= radial_dist))
+    radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
+                          (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
 
     return radial_vectors_x, radial_vectors_y, radial_ind
 
@@ -212,8 +212,8 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 # Load the image and convert it to a numpy array
 image = Image.open('my_plot.jpg')
 width, height = image.size 
-image_array = np.array(image)
-gradient_x, gradient_y = sobel_task1.calculate_brightness_gradient(image)
+image_gray = image.convert('L')
+gradient_x, gradient_y = sobel_task1.sobel_with_cv2(image)
 grad_x = np.reshape(gradient_x, width * height)
 grad_y = np.reshape(gradient_y, width * height)
 
