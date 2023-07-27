@@ -48,12 +48,12 @@ def convert_to_gradient_vectors(gradient_magnitude, gradient_direction, w, h):
     
     return gradient_x, gradient_y
 
-def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
+def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y, gray_scale, min_gray):
     # Calculate the dot product
     dot_product = gradient_x*radial_x + gradient_y*radial_y
     grad_mag = np.sqrt(gradient_x*gradient_x + gradient_y*gradient_y)
     rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
-    ind = np.where(grad_mag > 0)
+    ind = np.where((grad_mag > 0) & (gray_scale >= min_gray))
 
     # Clip the ratios to be in range between -1 and 1
     ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
@@ -179,7 +179,8 @@ def get_variance(start, end):
         ref_lon = lon_min + (x/width)*(lon_max - lon_min)
         radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
                                                 radial_dist, lon_pts, lat_pts, x_pts, y_pts)
-        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
+        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
+                                                 radial_x[ind], radial_y[ind], image_gray[ind], min_gray_temp)
         dav_array[y, x] = variance
 
 # Get coordinates from netcdf4 file
@@ -216,6 +217,7 @@ image_gray = np.array(image.convert('L'))
 gradient_x, gradient_y = sobel_task1.sobel_with_cv2(image)
 grad_x = np.reshape(gradient_x, width * height)
 grad_y = np.reshape(gradient_y, width * height)
+image_gray = np.reshape(image_gray, width * height)
 
 # Convert magnitude and direction into a vector
 """grad_x, grad_y = convert_to_gradient_vectors(gradient_magnitude, gradient_direction,
@@ -242,10 +244,12 @@ plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
 radial_dist = 150
 ref_lat, ref_lon = 20, -80
 width, height = image.size 
+min_gray_temp = 50
 lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
 radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
                                                    radial_dist, lon_pts, lat_pts, x_pts, y_pts)
-variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], radial_x[ind], radial_y[ind])
+variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
+                                         radial_x[ind], radial_y[ind], image_gray[ind], min_gray_temp)
 print("Variance", variance)
 print("Image size", image.size)
 plot_angle_histogram(angle_list)
