@@ -167,6 +167,19 @@ def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=0.
         dy = gradient_y[i] * scale
         plt.arrow(x, y, dx, dy, width=arrow_width, color='red')
     plt.axis('off')
+    plt.show()
+
+# Plotting the gradient vectors
+def plot_radial_vectors_on_image(image, rad_x, rad_y, w, h, ref_lat, ref_lon):
+    plt.imshow(image, cmap='gray')
+    for i in range(len(rad_x)):
+        x = ((ref_lon - lon_min)/(lon_max - lon_min))*w
+        y = ((ref_lat - lat_max)/(lat_min - lat_max))*h
+        dx = rad_x[i]
+        dy = rad_y[i]
+        plt.arrow(x, y, dx, dy, color='yellow')
+    plt.axis('off')
+    plt.show()
 
 # Plotting the grad vectors here 
 plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
@@ -184,6 +197,8 @@ radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon,
                                                    radial_dist, lon_pts, lat_pts, x_pts, y_pts)
 variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
                                          radial_x[ind], radial_y[ind])
+plot_radial_vectors_on_image(image, radial_x, radial_y, width, height, ref_lat, ref_lon)
+plot_radial_vectors_on_image(image, radial_x[ind], radial_y[ind], width, height, ref_lat, ref_lon)
 print("Variance", variance)
 print("Image size", image.size)
 plot_angle_histogram(angle_list)
