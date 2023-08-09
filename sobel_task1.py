@@ -34,13 +34,14 @@ def sobel_with_cv2(image):
     # Convert the image to grayscale if necessary
      if image.layers > 2:
          image = np.mean(image, axis=2)
+         #image = np.dot(np.array(image)[...,:3], [0.2989, 0.5870, 0.1140])
+
 
      # Compute the gradient in the x and y directions
      gradient_x = cv2.Sobel(image, cv2.CV_64F, dx=1, dy=0)
      gradient_y = cv2.Sobel(image, cv2.CV_64F, dx=0, dy=1)
 
      return gradient_x, gradient_y
-
 
 def another_sobel(image):
 

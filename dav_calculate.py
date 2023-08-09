@@ -26,6 +26,11 @@ def dist_noHarv(lon1, lat1, lon2, lat2):
     d = ((np.abs(lon1 - lon2) * c)**2) + ((np.abs(lat1 - lat2) * (1/np.cos(1)) * c)**2)
     return np.sqrt(d)
 
+"""Calculate distance by pixel resolution"""
+def dist_pixel(x1, y1, x2, y2):
+    res = 4
+    return np.sqrt(((res * (x1 - x2)) ** 2) + ((res * (y1 - y2)) ** 2))
+
 def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     # Calculate the dot product
     dot_product = gradient_x*radial_x + gradient_y*radial_y
@@ -73,8 +78,10 @@ def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_l
     # Calculate radial vectors using image pixel coordinates
     radial_vectors_x = ref_x - x_lst 
     radial_vectors_y = y_lst - ref_y
-    radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
-                          (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))
+    """radial_ind = np.where((0 < distance(lon, lat, lon_lst, lat_lst)) & 
+                          (distance(lon, lat, lon_lst, lat_lst) <= radial_dist))"""
+    radial_ind = np.where((0 < dist_pixel(ref_x, ref_y, x_lst, y_lst)) & 
+                          (dist_pixel(ref_x, ref_y, x_lst, y_lst) <= radial_dist))
 
     return radial_vectors_x, radial_vectors_y, radial_ind
 
@@ -151,8 +158,8 @@ var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 # Load the image and convert it to a numpy array
 image = Image.open('my_plot.jpg')
 width, height = image.size 
-image_gray = np.array(image.convert('L'))
-gradient_x, gradient_y = sobel_task1.sobel_with_cv2(image)
+image_gray = image.convert('L')
+gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
 grad_x = np.reshape(gradient_x, width * height)
 grad_y = np.reshape(gradient_y, width * height)
 
@@ -170,7 +177,7 @@ def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=0.
     plt.show()
 
 # Plotting the gradient vectors
-def plot_radial_vectors_on_image(image, rad_x, rad_y, w, h, ref_lat, ref_lon):
+def plot_radial_vectors_on_image(image, rad_x, rad_y, w, h, ref_lat, ref_lon, gx, gy, x_lst, y_lst, scale=0.01, arrow_width=0.1):
     plt.imshow(image, cmap='gray')
     for i in range(len(rad_x)):
         x = ((ref_lon - lon_min)/(lon_max - lon_min))*w
@@ -178,6 +185,7 @@ def plot_radial_vectors_on_image(image, rad_x, rad_y, w, h, ref_lat, ref_lon):
         dx = rad_x[i]
         dy = rad_y[i]
         plt.arrow(x, y, dx, dy, color='yellow')
+        plt.arrow(x_lst[i], y_lst[i], gx[i] * scale, gy[i] * scale, width=arrow_width, color='red')
     plt.axis('off')
     plt.show()
 
@@ -187,7 +195,7 @@ plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
 
 # With different radial distances, calculate DAV
 radial_dist = 150
-ref_lat, ref_lon = 20, -80
+ref_lat, ref_lon = 55, -73
 width, height = image.size 
 min_temp = np.min(var_subset)
 max_temp = 280
@@ -197,11 +205,11 @@ radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon,
                                                    radial_dist, lon_pts, lat_pts, x_pts, y_pts)
 variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
                                          radial_x[ind], radial_y[ind])
-plot_radial_vectors_on_image(image, radial_x, radial_y, width, height, ref_lat, ref_lon)
-plot_radial_vectors_on_image(image, radial_x[ind], radial_y[ind], width, height, ref_lat, ref_lon)
 print("Variance", variance)
 print("Image size", image.size)
 plot_angle_histogram(angle_list)
+plot_radial_vectors_on_image(image, radial_x[ind], radial_y[ind], width, height, 
+                             ref_lat, ref_lon, grad_x[ind], grad_y[ind], x_pts[ind], y_pts[ind])
 
 # Now Mapping deviation-angle variances
 dav_array = np.zeros((height, width), dtype='d')
@@ -227,8 +235,8 @@ for t in range(len(threads)):
 print("DAV calculations have finished")
 
 # get the dav values masked out where brightness temperature is too high
-final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
-dav_map.generate_deviation_angle_variance_map(final_DAVs)
+#final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
+dav_map.generate_deviation_angle_variance_map(dav_array)
 
 # ------------------------------------------------
 
