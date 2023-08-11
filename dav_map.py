@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 def generate_deviation_angle_variance_map(dav_values):
     # Calculate image dimensions
     image_height, image_width = dav_values.shape
-    cmap = 'gray'  # Use a grayscale colormap
+    cmap = 'jet'
 
     # flip vertically to correlate with coordinates properly as the y-direction from image is different
     dav_values = np.flipud(dav_values)
