@@ -129,6 +129,7 @@ def get_variance(start, end):
 
 # Get coordinates from netcdf4 file
 nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
+#nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090503_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
@@ -138,8 +139,10 @@ lat = nc.variables['lat'][::2]
 lon = nc.variables['lon'][::2]
 
 # Define the North Atlantic region (in degrees)
-lon_min, lon_max = -120, 0
-lat_min, lat_max = -5, 60
+#lon_min, lon_max = -120, 0
+#lat_min, lat_max = -5, 60
+lon_min, lon_max = -90, -30
+lat_min, lat_max = 30, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -236,6 +239,7 @@ print("DAV calculations have finished")
 
 # get the dav values masked out where brightness temperature is too high
 #final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
+np.save("dav_values.npy", dav_array)
 dav_map.generate_deviation_angle_variance_map(dav_array)
 
 # ------------------------------------------------
