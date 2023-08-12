@@ -15,8 +15,8 @@ lat = nc.variables['lat'][:]
 lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
-#lon_min, lon_max = -120, 0
-#lat_min, lat_max = -5, 60
+"""lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60"""
 lon_min, lon_max = -90, -30
 lat_min, lat_max = 30, 60
 
@@ -57,7 +57,7 @@ var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 # Plot the variable using Matplotlib's pcolormesh function
 fig = plt.figure(figsize=(5, 3))
 ax = fig.add_subplot(1, 1, 1)
-im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='jet_r')
+im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='Greys')
 #im.set_clim(vmin=np.min(var_subset), vmax=280)
 ax.set_xticks(np.arange(lon_min, lon_max+15, 10))
 ax.set_yticks(np.arange(lat_min, lat_max+15, 10))
@@ -75,7 +75,7 @@ ax.spines['bottom'].set_visible(False)
 ax.axis('off')
 
 # Save the plot
-plt.savefig("my_plot.jpg", bbox_inches='tight', pad_inches=0)
+plt.savefig("another_plot.jpg", bbox_inches='tight', pad_inches=0)
 
 # Close the NetCDF4 file
 nc.close()

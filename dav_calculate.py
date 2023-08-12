@@ -139,8 +139,8 @@ lat = nc.variables['lat'][::2]
 lon = nc.variables['lon'][::2]
 
 # Define the North Atlantic region (in degrees)
-#lon_min, lon_max = -120, 0
-#lat_min, lat_max = -5, 60
+"""lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60"""
 lon_min, lon_max = -90, -30
 lat_min, lat_max = 30, 60
 
@@ -159,7 +159,7 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 
 # Load the image and convert it to a numpy array
-image = Image.open('my_plot.jpg')
+image = Image.open('another_plot.jpg')
 width, height = image.size 
 image_gray = image.convert('L')
 gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
@@ -198,7 +198,7 @@ plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
 
 # With different radial distances, calculate DAV
 radial_dist = 150
-ref_lat, ref_lon = 55, -73
+ref_lat, ref_lon = 55, -75
 width, height = image.size 
 min_temp = np.min(var_subset)
 max_temp = 280
