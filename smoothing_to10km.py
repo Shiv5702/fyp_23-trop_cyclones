@@ -55,7 +55,7 @@ def resample_nc4_file(input_file, output_file, scale_factor):
 
 
 # Resample the .nc4 file to 10km resolution
-input_file = 'fyp_23-trop_cyclones\DataSources\merg_2022020200_4km-pixel.nc4'
+input_file = 'DataSources\merg_2022020200_4km-pixel.nc4'
 output_file = 'resampled_file.nc4'
 scale_factor = 10
 
