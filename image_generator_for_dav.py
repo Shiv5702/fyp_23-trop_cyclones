@@ -5,6 +5,7 @@ from datetime import datetime
 
 # Open the NetCDF4 file
 nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
+#nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090503_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
@@ -14,8 +15,10 @@ lat = nc.variables['lat'][::2]
 lon = nc.variables['lon'][::2]
 
 # Define the North Atlantic region (in degrees)
-lon_min, lon_max = -120, 0
-lat_min, lat_max = -5, 60
+"""lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60"""
+lon_min, lon_max = -90, -30
+lat_min, lat_max = 30, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -44,8 +47,8 @@ var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 # Plot the variable using Matplotlib's pcolormesh function
 fig = plt.figure(figsize=(5, 3))
 ax = fig.add_subplot(1, 1, 1)
-im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='jet_r', vmin=np.min(var_subset), vmax=280)
-im.set_clim(vmin=np.min(var_subset), vmax=280)
+im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='Greys')
+#im.set_clim(vmin=np.min(var_subset), vmax=280)
 ax.set_xticks(np.arange(lon_min, lon_max+15, 10))
 ax.set_yticks(np.arange(lat_min, lat_max+15, 10))
 ax.set_xlim(lon_min, lon_max)
@@ -62,7 +65,7 @@ ax.spines['bottom'].set_visible(False)
 ax.axis('off')
 
 # Save the plot
-plt.savefig("v4_smoothed_my_plot.jpg", bbox_inches='tight', pad_inches=0)
+plt.savefig("my_plot.jpg", bbox_inches='tight', pad_inches=0)
 
 # Close the NetCDF4 file
 nc.close()
