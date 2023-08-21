@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 # Open the NetCDF4 file
-nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
+#nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
 #nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090503_4km-pixel.nc4')
+nc = netCDF4.Dataset('resampled_file.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
@@ -17,8 +18,8 @@ lon = nc.variables['lon'][::2]
 # Define the North Atlantic region (in degrees)
 """lon_min, lon_max = -120, 0
 lat_min, lat_max = -5, 60"""
-lon_min, lon_max = -90, -30
-lat_min, lat_max = 30, 60
+lon_min, lon_max = 100, 180
+lat_min, lat_max = 0, 40
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
