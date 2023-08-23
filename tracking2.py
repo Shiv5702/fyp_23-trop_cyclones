@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 dav_array = np.load("dav_values.npy")
 
 # Set threshold values
-dav_threshold = 5.0  # Adjust this threshold as needed
+dav_threshold = 3100  # Adjust this threshold as needed
 
 # Define a function to perform tracking
 def track_clusters(dav_array, threshold):
@@ -49,3 +49,22 @@ tracked_clusters = track_clusters(dav_array, dav_threshold)
 for idx, cluster in enumerate(tracked_clusters):
     print(f"Cluster {idx+1}: {cluster}")
 
+# Overlay tracked clusters on the DAV map
+def overlay_clusters_on_dav_map(dav_values, clusters):
+    cmap = 'jet'
+    norm = mcolors.Normalize(vmin=np.min(dav_values), vmax=np.max(dav_values))
+    
+    plt.imshow(dav_values, cmap=cmap, norm=norm, origin='lower')
+    plt.axis('off')
+
+    # Plot the clusters as points or markers
+    for cluster in clusters:
+        x_coords, y_coords = zip(*cluster)
+        plt.scatter(y_coords, x_coords, color='red', s=10)  # You can adjust the color and size as needed
+
+    plt.colorbar()
+    plt.title('Tracked Clusters on DAV Map')
+    plt.show()
+
+# Overlay and visualize the tracked clusters on the DAV map
+overlay_clusters_on_dav_map(dav_array, tracked_clusters)
