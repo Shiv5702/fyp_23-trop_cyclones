@@ -39,6 +39,3 @@ def mapping_variance(varr):
     plt.tight_layout()
     plt.show()
 
-
-
-
