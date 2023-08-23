@@ -1,12 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from PIL import Image
 
 # Load the pre-calculated DAV array
 dav_array = np.load("fyp_23-trop_cyclones/dav_values.npy")
 
+# Load the JPEG image as a background
+background_image = Image.open("fyp_23-trop_cyclones/my_plot.jpg")
+
 # Set threshold values
-dav_threshold = 3000  # Adjust this threshold as needed
+dav_threshold = 3100  # Adjust this threshold as needed
 
 # Define a function to perform tracking
 def track_clusters(dav_array, threshold):
@@ -49,29 +53,47 @@ tracked_clusters = track_clusters(dav_array, dav_threshold)
 for idx, cluster in enumerate(tracked_clusters):
     print(f"Cluster {idx+1}: {cluster}")
 
+# Create a figure with two subplots
+fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 # Overlay tracked clusters on the DAV map
-def overlay_clusters_on_dav_map(dav_values, clusters):
+def overlay_clusters_on_dav_map(ax, dav_values, clusters):
     cmap = 'jet'
     norm = mcolors.Normalize(vmin=np.min(dav_values), vmax=np.max(dav_values))
-    
-    plt.imshow(dav_values, cmap=cmap, norm=norm, origin='lower')
-    plt.axis('off')
 
-    # Plot the clusters as points or markers
+    ax.imshow(dav_values, cmap=cmap, norm=norm, origin='upper')
+    ax.axis('off')
+    ax.set_title('DAV Map')
+
+    # Plot the clusters as points or markers with circles
     for cluster in clusters:
         x_coords, y_coords = zip(*cluster)
         cluster_center_x = np.mean(x_coords)
         cluster_center_y = np.mean(y_coords)
-        cluster_radius = max(np.ptp(x_coords), np.ptp(y_coords)) / 2  # Compute the radius as half of the maximum extent
+        cluster_radius = max(np.ptp(x_coords), np.ptp(y_coords)) / 2
         circle = plt.Circle((cluster_center_y, cluster_center_x), cluster_radius, color='red', fill=False, lw=1)
-        plt.gca().add_patch(circle)
-        #x_coords, y_coords = zip(*cluster)
-        #plt.scatter(y_coords, x_coords, color='red', s=10)  # You can adjust the color and size as needed
+        ax.add_patch(circle)
+
+# Overlay tracked clusters on the flipped JPEG image
+def overlay_clusters_on_image(ax, background_image, clusters):
+    img_array = np.array(background_image)
+    ax.imshow(img_array, origin='upper')  # Ensure origin is 'upper' for consistency
+    ax.axis('off')
+    ax.set_title('Clusters on Image')
+
+    # Plot the clusters as points or markers with circles
+    for cluster in clusters:
+        x_coords, y_coords = zip(*cluster)
+        cluster_center_x = np.mean(x_coords)
+        cluster_center_y = np.mean(y_coords)
+        cluster_radius = max(np.ptp(x_coords), np.ptp(y_coords)) / 2
+        circle = plt.Circle((cluster_center_y, cluster_center_x), cluster_radius, color='red', fill=False, lw=1)
+        ax.add_patch(circle)
+
+# Overlay and visualize the tracked clusters on both the DAV map and the flipped JPEG image
+overlay_clusters_on_dav_map(axs[0], dav_array, tracked_clusters)
+overlay_clusters_on_image(axs[1], background_image, tracked_clusters)
+
+plt.tight_layout()
+plt.show()
 
 
-    plt.colorbar()
-    plt.title('Tracked Clusters on DAV Map')
-    plt.show()
-
-# Overlay and visualize the tracked clusters on the DAV map
-overlay_clusters_on_dav_map(dav_array, tracked_clusters)
