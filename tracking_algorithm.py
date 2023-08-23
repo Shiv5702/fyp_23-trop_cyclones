@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 dav_array = np.load("fyp_23-trop_cyclones/dav_values.npy")
 
 # Set threshold values
-dav_threshold = 3100  # Adjust this threshold as needed
+dav_threshold = 3000  # Adjust this threshold as needed
 
 # Define a function to perform tracking
 def track_clusters(dav_array, threshold):
