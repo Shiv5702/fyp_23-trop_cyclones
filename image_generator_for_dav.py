@@ -16,10 +16,8 @@ lat = nc.variables['lat'][::2]
 lon = nc.variables['lon'][::2]
 
 # Define the North Atlantic region (in degrees)
-"""lon_min, lon_max = -120, 0
-lat_min, lat_max = -5, 60"""
-lon_min, lon_max = 100, 180
-lat_min, lat_max = 0, 40
+lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
