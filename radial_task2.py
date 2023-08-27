@@ -1,5 +1,6 @@
 import math
 import dav_map
+import os
 import netCDF4
 import numpy as np
 import sobel_task1
@@ -56,33 +57,6 @@ def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     
     return variance,angles
 
-def numpy_coords(image):
-    w, h = image.size
-    lat_coords = np.full((h*w), 0, dtype='d')
-    lon_coords = np.full((h*w), 0, dtype='d')
-    x_coords = np.full((h*w), 0, dtype='d')
-    y_coords = np.full((h*w), 0, dtype='d')
-    for pixel_ind in range(h*w):
-        x = pixel_ind % w
-        y = pixel_ind // w
-        lat_coords[pixel_ind] = lat_max + (y/h)*(lat_min - lat_max)
-        lon_coords[pixel_ind] = lon_min + (x/w)*(lon_max - lon_min)
-        x_coords[pixel_ind] = x
-        y_coords[pixel_ind] = y
-    return lon_coords, lat_coords, x_coords, y_coords
-
-def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_lst):
-    ref_x = ((lon - lon_min)/(lon_max - lon_min))*width
-    ref_y = ((lat - lat_max)/(lat_min - lat_max))*height
-
-    # Calculate radial vectors using image pixel coordinates
-    radial_vectors_x = ref_x - x_lst 
-    radial_vectors_y = y_lst - ref_y
-    radial_ind = np.where((0 < dist_pixel(ref_x, ref_y, x_lst, y_lst)) & 
-                          (dist_pixel(ref_x, ref_y, x_lst, y_lst) <= radial_dist))
-
-    return radial_vectors_x, radial_vectors_y, radial_ind
-
 # Histogram of the dav angles
 def plot_angle_histogram(angles):
      plt.hist(angles, bins=120, range=(-90, 90), edgecolor='black')
@@ -91,151 +65,194 @@ def plot_angle_histogram(angles):
      plt.title('Angle Histogram')
      plt.show()
 
-# This is where the thread can make more threads to split the pixel workload
-def split_pixel_indices(start, end):
-    splits = 10
-    split_size = (end - start) // splits
+
+def run_algorithm(filename):
+
+    def numpy_coords(image):
+        w, h = image.size
+        lat_coords = np.full((h*w), 0, dtype='d')
+        lon_coords = np.full((h*w), 0, dtype='d')
+        x_coords = np.full((h*w), 0, dtype='d')
+        y_coords = np.full((h*w), 0, dtype='d')
+        for pixel_ind in range(h*w):
+            x = pixel_ind % w
+            y = pixel_ind // w
+            lat_coords[pixel_ind] = lat_max + (y/h)*(lat_min - lat_max)
+            lon_coords[pixel_ind] = lon_min + (x/w)*(lon_max - lon_min)
+            x_coords[pixel_ind] = x
+            y_coords[pixel_ind] = y
+        return lon_coords, lat_coords, x_coords, y_coords
+
+    def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_lst):
+        ref_x = ((lon - lon_min)/(lon_max - lon_min))*width
+        ref_y = ((lat - lat_max)/(lat_min - lat_max))*height
+
+        # Calculate radial vectors using image pixel coordinates
+        radial_vectors_x = ref_x - x_lst 
+        radial_vectors_y = y_lst - ref_y
+        radial_ind = np.where((0 < dist_pixel(ref_x, ref_y, x_lst, y_lst)) & 
+                            (dist_pixel(ref_x, ref_y, x_lst, y_lst) <= radial_dist))
+
+        return radial_vectors_x, radial_vectors_y, radial_ind
+    
+    # This is where the thread can make more threads to split the pixel workload
+    def split_pixel_indices(start, end):
+        splits = 10
+        split_size = (end - start) // splits
+        if split_size == 0:
+            splits = end - start
+            split_size = (end - start) // splits                                  
+
+        threads = []                                                                
+        for i in range(splits):                                                 
+            # determine the indices of the list this thread will handle             
+            start_ind = i * split_size + start                                                 
+            # special case on the last chunk to account for uneven splits           
+            end_ind = end if i+1 == splits else ((i+1) * split_size + start)           
+            # create the thread                                                     
+            threads.append(                                                         
+                threading.Thread(target=get_variance, args=(start_ind, end_ind)))         
+            threads[-1].start()
+
+        for t in range(len(threads)):
+            threads[t].join()
+
+    def get_variance(start, end):
+        for pixel_ind in range(start, end):
+            x = pixel_ind % width
+            y = pixel_ind // width
+            ref_lat = lat_max + (y/height)*(lat_min - lat_max)
+            ref_lon = lon_min + (x/width)*(lon_max - lon_min)
+            radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
+                                                    radial_dist, lon_pts, lat_pts, x_pts, y_pts)
+            variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
+                                                    radial_x[ind], radial_y[ind])
+            dav_array[y, x] = variance
+    
+    # Get coordinates from netcdf4 file
+    nc = netCDF4.Dataset(filename)
+
+    # Get the variable you want to plot
+    var = nc.variables['Tb']
+
+    # Get the latitude and longitude values
+    lat = nc.variables['lat'][::2]
+    lon = nc.variables['lon'][::2]
+
+    # Define the North Atlantic region (in degrees)
+    lon_min, lon_max = 100, 180
+    lat_min, lat_max = 0, 40
+
+    # Find the indices of the latitude and longitude values that correspond to the desired region
+    lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
+    lon_inds = np.where((lon >= lon_min) & (lon <= lon_max))[0]
+
+    # Find the nearest index of the minimum and maximum values
+    lat_min_ind = lat_inds[0]
+    lat_max_ind = lat_inds[-1]
+    lon_min_ind = lon_inds[0]
+    lon_max_ind = lon_inds[-1]
+
+    # Create a 2D meshgrid of latitudes and longitudes for the desired region
+    lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
+    var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
+
+    # Plot the variable using Matplotlib's pcolormesh function
+    fig = plt.figure(figsize=(5, 3))
+    ax = fig.add_subplot(1, 1, 1)
+    im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='Greys')
+    #im.set_clim(vmin=np.min(var_subset), vmax=280)
+    ax.set_xticks(np.arange(lon_min, lon_max+15, 10))
+    ax.set_yticks(np.arange(lat_min, lat_max+15, 10))
+    ax.set_xlim(lon_min, lon_max)
+    ax.set_ylim(lat_min, lat_max)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    # Remove the axis and set the figure size to match the plot size
+    ax.axis('off')
+    dataname = filename[:filename.find('_', 5)]
+    imgname = "Images/" + dataname + ".jpg"
+
+    # Save the plot
+    plt.savefig(imgname, bbox_inches='tight', pad_inches=0)
+
+    # Close the NetCDF4 file
+    nc.close()
+
+    # Load the image and convert it to a numpy array
+    image = Image.open(imgname)
+    width, height = image.size 
+    image_gray = image.convert('L')
+    gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
+    grad_x = np.reshape(gradient_x, width * height)
+    grad_y = np.reshape(gradient_y, width * height)
+
+
+    # With different radial distances, calculate DAV
+    radial_dist = 250
+    width, height = image.size 
+    min_temp = np.min(var_subset)
+    max_temp = 280
+    temp_threshold = 270
+    lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
+
+    # Now Mapping deviation-angle variances
+    dav_array = np.zeros((height, width), dtype='d')
+    splits = 1000
+    split_size = (width*height) // splits
     if split_size == 0:
-        splits = end - start
-        split_size = (end - start) // splits                                  
+        splits = width*height
+        split_size = (width*height) // splits                                  
 
     threads = []                                                                
     for i in range(splits):                                                 
         # determine the indices of the list this thread will handle             
-        start_ind = i * split_size + start                                                 
+        start = i * split_size                                                  
         # special case on the last chunk to account for uneven splits           
-        end_ind = end if i+1 == splits else ((i+1) * split_size + start)           
+        end = (width*height) if i+1 == splits else (i+1) * split_size                 
         # create the thread                                                     
         threads.append(                                                         
-            threading.Thread(target=get_variance, args=(start_ind, end_ind)))         
+            threading.Thread(target=split_pixel_indices, args=(start, end)))         
         threads[-1].start()
 
     for t in range(len(threads)):
         threads[t].join()
 
-def get_variance(start, end):
-    for pixel_ind in range(start, end):
-        x = pixel_ind % width
-        y = pixel_ind // width
-        ref_lat = lat_max + (y/height)*(lat_min - lat_max)
-        ref_lon = lon_min + (x/width)*(lon_max - lon_min)
-        radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
-                                                radial_dist, lon_pts, lat_pts, x_pts, y_pts)
-        variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
-                                                 radial_x[ind], radial_y[ind])
-        dav_array[y, x] = variance
-
-# Get coordinates from netcdf4 file
-nc = netCDF4.Dataset('resampled_file.nc4')
-
-# Get the variable you want to plot
-var = nc.variables['Tb']
-
-# Get the latitude and longitude values
-lat = nc.variables['lat'][::2]
-lon = nc.variables['lon'][::2]
-
-# Define the North Atlantic region (in degrees)
-lon_min, lon_max = 100, 180
-lat_min, lat_max = 0, 40
-
-# Find the indices of the latitude and longitude values that correspond to the desired region
-lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
-lon_inds = np.where((lon >= lon_min) & (lon <= lon_max))[0]
-
-# Find the nearest index of the minimum and maximum values
-lat_min_ind = lat_inds[0]
-lat_max_ind = lat_inds[-1]
-lon_min_ind = lon_inds[0]
-lon_max_ind = lon_inds[-1]
-
-# Create a 2D meshgrid of latitudes and longitudes for the desired region
-lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
-var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
-
-# Load the image and convert it to a numpy array
-image = Image.open('my_plot.jpg')
-width, height = image.size 
-image_gray = image.convert('L')
-gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
-grad_x = np.reshape(gradient_x, width * height)
-grad_y = np.reshape(gradient_y, width * height)
+    # get the dav values masked out where brightness temperature is too high
+    #final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
+    davname = "DAVs/" + dataname + "_DAV.npy"
+    np.save(davname, dav_array)
 
 
-# Plotting the gradient vectors
-def plot_gradient_vectors_on_image(image, gradient_x, gradient_y, w, h, scale=0.01, arrow_width=0.1):
-    plt.imshow(image, cmap='gray')
-    for i in range(len(gradient_x)):
-        x = i % w
-        y = i // w
-        dx = gradient_x[i] * scale
-        dy = gradient_y[i] * scale
-        plt.arrow(x, y, dx, dy, width=arrow_width, color='red')
-    plt.axis('off')
-    plt.show()
-
-# Plotting the gradient vectors
-def plot_radial_vectors_on_image(image, rad_x, rad_y, w, h, ref_lat, ref_lon, gx, gy, x_lst, y_lst, scale=0.01, arrow_width=0.1):
-    plt.imshow(image, cmap='gray')
-    for i in range(len(rad_x)):
-        x = ((ref_lon - lon_min)/(lon_max - lon_min))*w
-        y = ((ref_lat - lat_max)/(lat_min - lat_max))*h
-        dx = rad_x[i]
-        dy = rad_y[i]
-        plt.arrow(x, y, dx, dy, color='yellow')
-        plt.arrow(x_lst[i], y_lst[i], gx[i] * scale, gy[i] * scale, width=arrow_width, color='red')
-    plt.axis('off')
-    plt.show()
-
-# Plotting the grad vectors here 
-plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
+def use_data(start, end):
+    for i in range(start, end):
+        run_algorithm(dataList[i])
 
 
-# With different radial distances, calculate DAV
-radial_dist = 250
-ref_lat, ref_lon = 20, 130
-width, height = image.size 
-min_temp = np.min(var_subset)
-max_temp = 280
-temp_threshold = 270
-lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
-radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
-                                                   radial_dist, lon_pts, lat_pts, x_pts, y_pts)
-variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
-                                         radial_x[ind], radial_y[ind])
-print("Variance", variance)
-print("Image size", image.size)
-plot_angle_histogram(angle_list)
-plot_radial_vectors_on_image(image, radial_x[ind], radial_y[ind], width, height, 
-                             ref_lat, ref_lon, grad_x[ind], grad_y[ind], x_pts[ind], y_pts[ind])
-
-# Now Mapping deviation-angle variances
-dav_array = np.zeros((height, width), dtype='d')
-splits = 1000
-split_size = (width*height) // splits
+splits = 2300
+dataList = os.listdir('DataSources/2021-AugToOct')
+split_size = len(dataList) // splits
 if split_size == 0:
-    splits = width*height
-    split_size = (width*height) // splits                                  
+    splits = len(dataList)
+    split_size = len(dataList) // splits         
 
 threads = []                                                                
 for i in range(splits):                                                 
     # determine the indices of the list this thread will handle             
     start = i * split_size                                                  
     # special case on the last chunk to account for uneven splits           
-    end = (width*height) if i+1 == splits else (i+1) * split_size                 
+    end = len(dataList) if i+1 == splits else (i+1) * split_size                 
     # create the thread                                                     
     threads.append(                                                         
-        threading.Thread(target=split_pixel_indices, args=(start, end)))         
+        threading.Thread(target=use_data, args=(start, end)))         
     threads[-1].start()
 
 for t in range(len(threads)):
     threads[t].join()
-print("DAV calculations have finished")
-
-# get the dav values masked out where brightness temperature is too high
-#final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
-np.save("dav_values.npy", dav_array)
-dav_map.generate_deviation_angle_variance_map(dav_array)
-
-# ------------------------------------------------
 
