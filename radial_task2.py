@@ -57,14 +57,6 @@ def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
     
     return variance,angles
 
-# Histogram of the dav angles
-def plot_angle_histogram(angles):
-     plt.hist(angles, bins=120, range=(-90, 90), edgecolor='black')
-     plt.xlabel('Angles (degrees)')
-     plt.ylabel('Frequency')
-     plt.title('Angle Histogram')
-     plt.show()
-
 
 def run_algorithm(filename):
 
@@ -130,7 +122,7 @@ def run_algorithm(filename):
             dav_array[y, x] = variance
     
     # Get coordinates from netcdf4 file
-    nc = netCDF4.Dataset(filename)
+    nc = netCDF4.Dataset(folder + "/" + filename)
 
     # Get the variable you want to plot
     var = nc.variables['Tb']
@@ -157,35 +149,12 @@ def run_algorithm(filename):
     lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
     var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 
-    # Plot the variable using Matplotlib's pcolormesh function
-    fig = plt.figure(figsize=(5, 3))
-    ax = fig.add_subplot(1, 1, 1)
-    im = ax.pcolormesh(lon_subset, lat_subset, var_subset, cmap='Greys')
-    #im.set_clim(vmin=np.min(var_subset), vmax=280)
-    ax.set_xticks(np.arange(lon_min, lon_max+15, 10))
-    ax.set_yticks(np.arange(lat_min, lat_max+15, 10))
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-
-    # Remove the axis and set the figure size to match the plot size
-    ax.axis('off')
+    # Close the NetCDF4 file
+    nc.close()
     dataname = filename[:filename.find('_', 5)]
     imgname = "Images/" + dataname + ".jpg"
 
-    # Save the plot
-    plt.savefig(imgname, bbox_inches='tight', pad_inches=0)
-
-    # Close the NetCDF4 file
-    nc.close()
-
-    # Load the image and convert it to a numpy array
+    # Load the image and convert it to a numpy array. This is assuming that image has already been made
     image = Image.open(imgname)
     width, height = image.size 
     image_gray = image.convert('L')
@@ -236,11 +205,13 @@ def use_data(start, end):
 
 
 splits = 2300
-dataList = os.listdir('DataSources/2021-AugToOct')
+folder = 'DataSources/2021-AugToOct'
+dataList = os.listdir(folder)
 split_size = len(dataList) // splits
 if split_size == 0:
     splits = len(dataList)
-    split_size = len(dataList) // splits         
+    split_size = len(dataList) // splits
+
 
 threads = []                                                                
 for i in range(splits):                                                 
