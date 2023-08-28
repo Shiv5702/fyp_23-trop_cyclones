@@ -8,57 +8,57 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import threading
 
-"""Calculate distance between lat and lon coordinates with harvesine"""
-def distance(lon1, lat1, lon2, lat2):
-    radius = 6371  # earth radius (km)
-    dlat = np.radians(lat2 - lat1)
-    dlon = np.radians(lon2 - lon1)
-    a = (np.sin(dlat / 2) * np.sin(dlat / 2) +
-         np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) *
-         np.sin(dlon / 2) * np.sin(dlon / 2))
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    d = radius * c
-
-    return d
-
-"""Calculate distance between lat and lon coordinates without harvesine"""
-def dist_noHarv(lon1, lat1, lon2, lat2):
-    c = 111.325
-    d = ((np.abs(lon1 - lon2) * c)**2) + ((np.abs(lat1 - lat2) * (1/np.cos(1)) * c)**2)
-    return np.sqrt(d)
-
-"""Calculate distance by pixel resolution"""
-def dist_pixel(x1, y1, x2, y2):
-    res = 10
-    return np.sqrt(((res * (x1 - x2)) ** 2) + ((res * (y1 - y2)) ** 2))
-
-def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
-    # Calculate the dot product
-    dot_product = gradient_x*radial_x + gradient_y*radial_y
-    grad_mag = np.sqrt(gradient_x*gradient_x + gradient_y*gradient_y)
-    rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
-    ind = np.where(grad_mag > 0)
-
-    # Clip the ratios to be in range between -1 and 1
-    ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
-    ratios = np.where(ratios >= -1, ratios, -1)
-    ratios = np.where(ratios <= 1, ratios, 1)
-
-    # Calculate the deviation angle
-    deviation_angle = np.arccos(ratios)
-    deviations = np.degrees(deviation_angle)
-    angles = np.where(deviations <= 90, deviations, deviations - 180)
-
-    # Calculate variance if there are deviation angles
-    if angles.size > 0:
-        variance = np.nanvar(angles)
-    else:
-        variance = 0
-    
-    return variance,angles
-
 
 def run_algorithm(filename):
+
+    """Calculate distance between lat and lon coordinates with harvesine"""
+    def distance(lon1, lat1, lon2, lat2):
+        radius = 6371  # earth radius (km)
+        dlat = np.radians(lat2 - lat1)
+        dlon = np.radians(lon2 - lon1)
+        a = (np.sin(dlat / 2) * np.sin(dlat / 2) +
+            np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) *
+            np.sin(dlon / 2) * np.sin(dlon / 2))
+        c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+        d = radius * c
+
+        return d
+
+    """Calculate distance between lat and lon coordinates without harvesine"""
+    def dist_noHarv(lon1, lat1, lon2, lat2):
+        c = 111.325
+        d = ((np.abs(lon1 - lon2) * c)**2) + ((np.abs(lat1 - lat2) * (1/np.cos(1)) * c)**2)
+        return np.sqrt(d)
+
+    """Calculate distance by pixel resolution"""
+    def dist_pixel(x1, y1, x2, y2):
+        res = 4
+        return np.sqrt(((res * (x1 - x2)) ** 2) + ((res * (y1 - y2)) ** 2))
+
+    def calculate_DAV_Numpy(gradient_x, gradient_y, radial_x, radial_y):
+        # Calculate the dot product
+        dot_product = gradient_x*radial_x + gradient_y*radial_y
+        grad_mag = np.sqrt(gradient_x*gradient_x + gradient_y*gradient_y)
+        rad_mag = np.sqrt(radial_x*radial_x + radial_y*radial_y)
+        ind = np.where(grad_mag > 0)
+
+        # Clip the ratios to be in range between -1 and 1
+        ratios = dot_product[ind] / (grad_mag[ind] * rad_mag[ind])
+        ratios = np.where(ratios >= -1, ratios, -1)
+        ratios = np.where(ratios <= 1, ratios, 1)
+
+        # Calculate the deviation angle
+        deviation_angle = np.arccos(ratios)
+        deviations = np.degrees(deviation_angle)
+        angles = np.where(deviations <= 90, deviations, deviations - 180)
+
+        # Calculate variance if there are deviation angles
+        if angles.size > 0:
+            variance = np.nanvar(angles)
+        else:
+            variance = 0
+        
+        return variance
 
     def numpy_coords(image):
         w, h = image.size
@@ -117,10 +117,11 @@ def run_algorithm(filename):
             ref_lon = lon_min + (x/width)*(lon_max - lon_min)
             radial_x, radial_y, ind = calculate_radial_vectors(ref_lat, ref_lon, 
                                                     radial_dist, lon_pts, lat_pts, x_pts, y_pts)
-            variance,angle_list= calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
+            variance = calculate_DAV_Numpy(grad_x[ind], grad_y[ind], 
                                                     radial_x[ind], radial_y[ind])
             dav_array[y, x] = variance
     
+    """
     # Get coordinates from netcdf4 file
     nc = netCDF4.Dataset(folder + "/" + filename)
 
@@ -129,12 +130,13 @@ def run_algorithm(filename):
 
     # Get the latitude and longitude values
     lat = nc.variables['lat'][::2]
-    lon = nc.variables['lon'][::2]
+    lon = nc.variables['lon'][::2]"""
 
     # Define the North Atlantic region (in degrees)
     lon_min, lon_max = -120, 0
     lat_min, lat_max = -5, 60
 
+    """
     # Find the indices of the latitude and longitude values that correspond to the desired region
     lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
     lon_inds = np.where((lon >= lon_min) & (lon <= lon_max))[0]
@@ -143,14 +145,12 @@ def run_algorithm(filename):
     lat_min_ind = lat_inds[0]
     lat_max_ind = lat_inds[-1]
     lon_min_ind = lon_inds[0]
-    lon_max_ind = lon_inds[-1]
+    lon_max_ind = lon_inds[-1]"""
 
     # Create a 2D meshgrid of latitudes and longitudes for the desired region
+    """
     lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min_ind:lat_max_ind+1])
-    var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
-
-    # Close the NetCDF4 file
-    nc.close()
+    var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]"""
     dataname = filename[:filename.find('_', 5)]
     imgname = "Images/" + dataname + ".jpg"
 
@@ -166,7 +166,7 @@ def run_algorithm(filename):
     # With different radial distances, calculate DAV
     radial_dist = 250
     width, height = image.size 
-    min_temp = np.min(var_subset)
+    min_temp = 0
     max_temp = 280
     temp_threshold = 270
     lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)

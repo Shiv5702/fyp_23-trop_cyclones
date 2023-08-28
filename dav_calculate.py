@@ -129,7 +129,6 @@ def get_variance(start, end):
 
 # Get coordinates from netcdf4 file
 nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
-#nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090503_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
@@ -139,10 +138,8 @@ lat = nc.variables['lat'][::2]
 lon = nc.variables['lon'][::2]
 
 # Define the North Atlantic region (in degrees)
-"""lon_min, lon_max = -120, 0
-lat_min, lat_max = -5, 60"""
-lon_min, lon_max = -90, -30
-lat_min, lat_max = 30, 60
+lon_min, lon_max = -120, 0
+lat_min, lat_max = -5, 60
 
 # Find the indices of the latitude and longitude values that correspond to the desired region
 lat_inds = np.where((lat >= lat_min) & (lat <= lat_max))[0]
@@ -197,7 +194,7 @@ plot_gradient_vectors_on_image(image, grad_x, grad_y, width, height)
 
 
 # With different radial distances, calculate DAV
-radial_dist = 150
+radial_dist = 250
 ref_lat, ref_lon = 55, -75
 width, height = image.size 
 min_temp = np.min(var_subset)
