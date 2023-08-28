@@ -4,10 +4,10 @@ import matplotlib.colors as mcolors
 from PIL import Image
 
 # Load the pre-calculated DAV array
-dav_array = np.load("fyp_23-trop_cyclones/dav_values.npy")
+dav_array = np.load("dav_values.npy")
 
 # Load the JPEG image as a background
-background_image = Image.open("fyp_23-trop_cyclones/my_plot.jpg")
+background_image = Image.open("my_plot.jpg")
 
 # Set threshold values
 dav_threshold = 3100  # Adjust this threshold as needed
