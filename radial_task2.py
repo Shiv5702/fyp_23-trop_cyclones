@@ -173,7 +173,7 @@ def run_algorithm(filename):
 
     # Now Mapping deviation-angle variances
     dav_array = np.zeros((height, width), dtype='d')
-    splits = 1000
+    splits = 500
     split_size = (width*height) // splits
     if split_size == 0:
         splits = width*height
