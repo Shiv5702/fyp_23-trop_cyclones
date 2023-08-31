@@ -52,39 +52,6 @@ def track_clusters_bfs(dav_array, fixed_threshold, min_cluster_size):
     return clusters
 
 
-def track_clusters_dfs(dav_array, threshold):
-    height, width = dav_array.shape
-    visited = np.zeros((height, width), dtype=bool)
-    clusters = []
-
-    def dfs(x, y):
-        cluster = []
-        stack = [(x, y)]
-
-        while stack:
-            x, y = stack.pop()
-            if visited[x, y]:
-                continue
-            visited[x, y] = True
-            cluster.append((x, y))
-
-            neighbors = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-            for dx, dy in neighbors:
-                new_x, new_y = x + dx, y + dy
-                if 0 <= new_x < height and 0 <= new_y < width and not visited[new_x, new_y] and dav_array[new_x, new_y] <= threshold:
-                    stack.append((new_x, new_y))
-
-        return cluster
-
-    for x in range(height):
-        for y in range(width):
-            if not visited[x, y] and dav_array[x, y] <= threshold:  # Change the threshold condition to find below threshold
-                new_cluster = dfs(x, y)
-                if len(new_cluster) > 0:
-                    clusters.append(new_cluster)
-
-    return clusters
-
 # Function to process and plot a single DAV image
 def process_and_plot_single_dav_array(dav_array, hour, image_path):
     # Load the corresponding image
@@ -94,8 +61,6 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
     plt.figure(figsize=(8, 6))
 
     # Define the custom colormap and normalization
-    # cmap = 'jet'
-    #cmap = plt.get_cmap('jet')
     cmap = plt.get_cmap('jet')  # Use 'jet_r' to reverse the 'jet' colormap
     
     norm = plt.Normalize(vmin=np.min(dav_array), vmax=np.max(dav_array))
@@ -104,7 +69,7 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
 
     # Subplot 1: Clusters
     plt.subplot(1, 2, 1)
-    plt.imshow(dav_array, cmap=cmap, norm=norm, origin='upper')
+    cax = plt.imshow(dav_array, cmap=cmap, norm=norm, origin='upper')
     tracked_clusters = track_clusters_bfs(dav_array, dav_threshold, min_cluster_size)
     for cluster in tracked_clusters:
         if len(cluster) >= min_cluster_size:
@@ -115,6 +80,8 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
             circle = plt.Circle((cluster_center_y, cluster_center_x), cluster_radius, color='red', fill=False, lw=1)
             plt.gca().add_patch(circle)
     plt.title("Clusters")
+
+    # Add a colorbar to indicate the scale
 
     # Subplot 2: Image
     plt.subplot(1, 2, 2)
@@ -152,7 +119,7 @@ for hour in range(num_hours):
     file_path = os.path.join(dav_directory, f"merg_{hour_str}_DAV.npy")
     
     # Load the numpy array from the file
-    dav_array = np.load(file_path)
+    dav_array = np.flipud(np.load(file_path))
     
     # Construct the file path for the corresponding image
     image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
