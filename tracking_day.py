@@ -95,9 +95,11 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
 
     # Define the custom colormap and normalization
     # cmap = 'jet'
-    cmap = plt.get_cmap('jet')
-    norm = plt.Normalize(vmin=2100, vmax=3200)
-    print(np.min(dav_array), np.max(dav_array))
+    #cmap = plt.get_cmap('jet')
+    cmap = plt.get_cmap('jet')  # Use 'jet_r' to reverse the 'jet' colormap
+    
+    norm = plt.Normalize(vmin=np.min(dav_array), vmax=np.max(dav_array))
+    #norm = plt.Normalize(vmin=2100, vmax=3200)
 
 
     # Subplot 1: Clusters
