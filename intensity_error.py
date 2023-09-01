@@ -17,4 +17,4 @@ interpolated_values = np.interp(new_times, original_times, original_values)
 #     print(f"{time:.2f}: {value}")
 
 
-caluclate_intensity(2422)
+print(caluclate_intensity(2422))
