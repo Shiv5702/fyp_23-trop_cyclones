@@ -12,3 +12,5 @@ def caluclate_intensity(dav_value):
     intensity = (upper_limit/(1 + exponent)) + lower_limit
 
     return intensity
+
+
