@@ -128,14 +128,14 @@ def get_variance(start, end):
         dav_array[y, x] = variance
 
 # Get coordinates from netcdf4 file
-nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
+nc = netCDF4.Dataset('intensity\merg_2022060300_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
 
 # Get the latitude and longitude values
-lat = nc.variables['lat'][::2]
-lon = nc.variables['lon'][::2]
+lat = nc.variables['lat'][:]
+lon = nc.variables['lon'][:]
 
 # Define the North Atlantic region (in degrees)
 lon_min, lon_max = -120, 0
@@ -156,7 +156,7 @@ lon_subset, lat_subset = np.meshgrid(lon[lon_min_ind:lon_max_ind+1], lat[lat_min
 var_subset = var[0, lat_min_ind:lat_max_ind+1, lon_min_ind:lon_max_ind+1]
 
 # Load the image and convert it to a numpy array
-image = Image.open('another_plot.jpg')
+image = Image.open('my_plot_ahmed.jpg')
 width, height = image.size 
 image_gray = image.convert('L')
 gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
@@ -236,7 +236,7 @@ print("DAV calculations have finished")
 
 # get the dav values masked out where brightness temperature is too high
 #final_DAVs = np.where(((image_gray / 255) * (max_temp - min_temp) + min_temp) <= temp_threshold, dav_array, 0)
-np.save("dav_values.npy", dav_array)
+np.save("ahmed_dav_values.npy", dav_array)
 dav_map.generate_deviation_angle_variance_map(dav_array)
 
 # ------------------------------------------------
