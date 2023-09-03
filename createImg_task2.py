@@ -13,8 +13,8 @@ def create_image(filename):
     var = nc.variables['Tb']
 
     # Get the latitude and longitude values
-    lat = nc.variables['lat'][::2]
-    lon = nc.variables['lon'][::2]
+    lat = nc.variables['lat'][:]
+    lon = nc.variables['lon'][:]
 
     # Define the North Atlantic region (in degrees)
     lon_min, lon_max = -120, 0
