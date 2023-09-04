@@ -6,7 +6,7 @@ from datetime import datetime
 # Open the NetCDF4 file
 #nc = netCDF4.Dataset('DataSources/merg_2022020200_4km-pixel.nc4')
 #nc = netCDF4.Dataset('DataSources/248-Data/merg_2022090503_4km-pixel.nc4')
-nc = netCDF4.Dataset('resampled_file.nc4')
+nc = netCDF4.Dataset('intensity\merg_2022060300_4km-pixel.nc4')
 
 # Get the variable you want to plot
 var = nc.variables['Tb']
@@ -64,7 +64,7 @@ ax.spines['bottom'].set_visible(False)
 ax.axis('off')
 
 # Save the plot
-plt.savefig("my_plot.jpg", bbox_inches='tight', pad_inches=0)
+plt.savefig("my_plot_ahmed.jpg", bbox_inches='tight', pad_inches=0)
 
 # Close the NetCDF4 file
 nc.close()
