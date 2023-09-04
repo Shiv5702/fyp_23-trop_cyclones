@@ -3,11 +3,17 @@ import netCDF4
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+import xarray as xr
+import fsspec
 
 # Generate image
 def create_image(filename):
     # Get coordinates from netcdf4 file
-    nc = netCDF4.Dataset(folder + "/" + filename)
+    tempfile = 'resampled_file.nc4'
+    dataset = load_dataset(folder + "/" + filename)
+    dataset.to_netcdf(tempfile)
+    nc = netCDF4.Dataset(tempfile)
+    dataset.close()
 
     # Get the variable you want to plot
     var = nc.variables['Tb']
@@ -63,10 +69,21 @@ def create_image(filename):
     nc.close()
     plt.close()
 
-folder = 'DataSources/2021-AugToOct'
-dataList = os.listdir(folder)
+
+def load_dataset(filename, engine="h5netcdf", *args, **kwargs) -> xr.Dataset:
+    """Load a NetCDF dataset from local file system or cloud bucket."""
+    with fsspec.open(filename, mode="rb") as file:
+        dataset = xr.load_dataset(file, engine=engine, *args, **kwargs)
+    return dataset
+
+folder = 'gs://netcdf-tropical/tropical'
+dataList = open('netcdfList.txt')
+allFiles = dataList.readlines()
+dataList.close()
 
 # Generate images first
-for file in dataList:
-    create_image(file)
+for file in allFiles:
+    line = file.strip()
+    dataname = line[line.find('merg_'):]
+    create_image(dataname)
 
