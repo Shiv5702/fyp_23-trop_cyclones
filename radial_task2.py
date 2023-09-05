@@ -74,6 +74,8 @@ def run_algorithm(filename):
             x_coords[pixel_ind] = x
             y_coords[pixel_ind] = y
         return lon_coords, lat_coords, x_coords, y_coords
+    
+    
 
     def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_lst):
         ref_x = ((lon - lon_min)/(lon_max - lon_min))*width
@@ -201,16 +203,19 @@ def run_algorithm(filename):
 
 def use_data(start, end):
     for i in range(start, end):
-        run_algorithm(dataList[i])
+        line = allFiles[i].strip()
+        dataname = line[line.find('merg_'):]
+        run_algorithm(dataname)
 
 
 splits = 2300
-folder = 'DataSources/2021-AugToOct'
-dataList = os.listdir(folder)
-split_size = len(dataList) // splits
+dataList = open('netcdfList.txt')
+allFiles = dataList.readlines()
+dataList.close()
+split_size = len(allFiles) // splits
 if split_size == 0:
-    splits = len(dataList)
-    split_size = len(dataList) // splits
+    splits = len(allFiles)
+    split_size = len(allFiles) // splits
 
 
 threads = []                                                                
@@ -218,7 +223,7 @@ for i in range(splits):
     # determine the indices of the list this thread will handle             
     start = i * split_size                                                  
     # special case on the last chunk to account for uneven splits           
-    end = len(dataList) if i+1 == splits else (i+1) * split_size                 
+    end = len(allFiles) if i+1 == splits else (i+1) * split_size                 
     # create the thread                                                     
     threads.append(                                                         
         threading.Thread(target=use_data, args=(start, end)))         

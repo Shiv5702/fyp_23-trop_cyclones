@@ -5,7 +5,7 @@ def caluclate_intensity(dav_value):
     beta =  1437
 
     lower_limit = 25
-    upper_limit = 160
+    upper_limit = 140
 
     exponent = np.exp(alpha * (dav_value - beta))
 
