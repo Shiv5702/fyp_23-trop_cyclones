@@ -74,6 +74,8 @@ def run_algorithm(filename):
             x_coords[pixel_ind] = x
             y_coords[pixel_ind] = y
         return lon_coords, lat_coords, x_coords, y_coords
+    
+    
 
     def calculate_radial_vectors(lat, lon, radial_dist, lon_lst, lat_lst, x_lst, y_lst):
         ref_x = ((lon - lon_min)/(lon_max - lon_min))*width
