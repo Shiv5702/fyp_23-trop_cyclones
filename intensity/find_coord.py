@@ -53,6 +53,8 @@ radius_km = 30
 
 coordinates_within_radius = find_coordinates_around_target(target_latitude, target_longitude, lat_pts, lon_pts, radius_km)
 
+print(coordinates_within_radius)
+print("===============================================")
 for target_latitude, target_longitude in coordinates_within_radius:
     # Find the indices of the target coordinates in lat_pts and lon_pts
     target_index = np.where((lat_pts == target_latitude) & (lon_pts == target_longitude))
@@ -67,4 +69,4 @@ for target_latitude, target_longitude in coordinates_within_radius:
 
 
 array = np.load("DAVs\merg_2021081123_DAV.npy")
-print(array[156][145])
+print(array[156][147])
