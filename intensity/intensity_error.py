@@ -19,17 +19,11 @@ def calculate_rms_error(known_intensity, calculated_intensity):
 
 
 
-#Convert image to numpy array
-image = Image.open('another_plot.jpg')
-width, height = image.size 
-image_gray = image.convert('L')
-gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
-grad_x = np.reshape(gradient_x, width * height)
-grad_y = np.reshape(gradient_y, width * height)
-lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
+
 
 # Original data points 
 original_times = [0, 3, 6, 9, 12, 15, 18, 21]  
+
 original_values = [35,35,35,37,40,40,35,32]
 
 new_times = np.arange(0, 24, 1)  
@@ -68,6 +62,7 @@ for t in interpolation_time_points:
 
 # Directory containing DAV numpy files
 dav_directory = "DAVs/"
+image_directory = "Images/"
 
 # Define the start date and time
 start_datetime = datetime(2021, 8, 11, 0, 0)
@@ -93,7 +88,19 @@ for hour in range(num_hours):
     
     # Load the numpy array from the file
     dav_array = np.flipud(np.load(file_path))
-    
+
+    # Construct the file path for the corresponding image
+    image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
+
+        #Convert image to numpy array
+    image = Image.open(image_path)
+    width, height = image.size 
+    image_gray = image.convert('L')
+    gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
+    grad_x = np.reshape(gradient_x, width * height)
+    grad_y = np.reshape(gradient_y, width * height)
+    lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
+        
     #finds the dav value at the tc centre coordinates
     while i< len(interpolated_latitudes):
         xy_coords = []
