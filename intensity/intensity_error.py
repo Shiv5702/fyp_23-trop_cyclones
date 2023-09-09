@@ -1,23 +1,29 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 from intensity import caluclate_intensity
+import sobel_task1
+from PIL import Image
+from find_coord import *
+from datetime import datetime, timedelta
+import os
 
-def calculate_rms_percentage_error(known_intensity, calculated_intensity):
+def calculate_rms_error(known_intensity, calculated_intensity):
     # Calculate the RMS error
     rms_error = np.sqrt(np.mean((known_intensity - calculated_intensity)**2))
 
-    # Calculate the range of known intensity values
-    intensity_range = np.max(known_intensity) - np.min(known_intensity)
+    return rms_error
 
-    # Calculate the percentage error
-    percentage_error = (rms_error / intensity_range) * 100
 
-    return percentage_error
+
+
+
+
 
 
 
 # Original data points 
 original_times = [0, 3, 6, 9, 12, 15, 18, 21]  
+
 original_values = [35,35,35,37,40,40,35,32]
 
 new_times = np.arange(0, 24, 1)  
@@ -54,21 +60,89 @@ for t in interpolation_time_points:
     interpolated_latitudes.append(interpolated_lat)
     interpolated_longitudes.append(interpolated_lon)
 
+# Directory containing DAV numpy files
+dav_directory = "DAVs/"
+image_directory = "Images/"
+
+# Define the start date and time
+start_datetime = datetime(2021, 8, 11, 0, 0)
+
+# Define the number of hours you want to process
+num_hours = 24
+
+radius_km = 36
+dav_values = []
+i = 0
+j =0
+
+for hour in range(num_hours):
+    #Loads the numpy array of the current hour
+    # Format the hour as a string with leading zeros
+    hour_str = start_datetime.strftime("%Y%m%d%H")
+
+    # Get the entire date as a string
+    datetime_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Construct the file path for the DAV numpy array
+    file_path = os.path.join(dav_directory, f"merg_{hour_str}_DAV.npy")
+    
+    # Load the numpy array from the file
+    dav_array = np.flipud(np.load(file_path))
+
+    # Construct the file path for the corresponding image
+    image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
+
+        #Convert image to numpy array
+    image = Image.open(image_path)
+    width, height = image.size 
+    image_gray = image.convert('L')
+    gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
+    grad_x = np.reshape(gradient_x, width * height)
+    grad_y = np.reshape(gradient_y, width * height)
+    lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
+        
+    #finds the dav value at the tc centre coordinates
+    while i< len(interpolated_latitudes):
+        xy_coords = []
+        target_latitude = interpolated_latitudes[i]
+        target_longitude = interpolated_longitudes[j]
+
+        coordinates_within_radius = find_coordinates_around_target(target_latitude, target_longitude, lat_pts, lon_pts, radius_km)
+
+        for target_latitude, target_longitude in coordinates_within_radius:
+        # Find the indices of the target coordinates in lat_pts and lon_pts
+            target_index = np.where((lat_pts == target_latitude) & (lon_pts == target_longitude))
+            
+            if len(target_index[0]) > 0:
+                target_x = x_pts[target_index[0][0]]
+                target_y = y_pts[target_index[0][0]]
+                xy_coords.append((target_x,target_y))
+            else:
+                print(f"Coordinates ({target_latitude}, {target_longitude}) not found in the image.")
+
+        total = 0  
+        for x,y in xy_coords:
+            total = total + dav_array[int(x)][int(y)]
+        
+        avg_dav = total/len(xy_coords)
+        dav_values.append(avg_dav)
+
+        i = i+1
+    
+    # Increment the datetime by one hour
+    start_datetime += timedelta(hours=1)
 
 
 
+  
+calculated_intensity = []
+for dav in dav_values:
+    calculated_intensity.append(caluclate_intensity(dav))
 
 known_intensity = interpolated_values  
-
-calculated_intensity = np.array([caluclate_intensity(2736.0669875508693),caluclate_intensity(2728.7006328516945),caluclate_intensity(2675.2767177644314),caluclate_intensity(2659.133647506552),caluclate_intensity(2664.1007748791644),
-                                 caluclate_intensity(2716.930570141763),caluclate_intensity(2761.903052609536),caluclate_intensity(2733.750818661922),caluclate_intensity(2714.371096425445),caluclate_intensity(2801.6782908503665),
-                                 caluclate_intensity(2750.6164533955516),caluclate_intensity(2674.1582987809),caluclate_intensity(2704.131003920646),caluclate_intensity(2696.9023951482154),caluclate_intensity(2710.5410761496187),
-                                 caluclate_intensity(2722.3439506321533),caluclate_intensity(2703.6549973875603),caluclate_intensity(2740.3192248250316),caluclate_intensity(2756.3545753574404),caluclate_intensity(2716.6674836840625),
-                                 caluclate_intensity(2706.021773920027),caluclate_intensity(2723.391146845953),caluclate_intensity(2681.2136767018815),caluclate_intensity(2694.143854041722)]) 
-
 
 print(known_intensity)
 print(calculated_intensity)
 
-percentage_error = calculate_rms_percentage_error(known_intensity, calculated_intensity)
-print(f"RMS Percentage Error: {percentage_error:.2f}%")
+percentage_error = calculate_rms_error(known_intensity, calculated_intensity)
+print(f"RMS  Error: {percentage_error:.2f}")

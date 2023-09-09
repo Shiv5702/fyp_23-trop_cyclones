@@ -34,37 +34,10 @@ def find_coordinates_around_target(target_latitude, target_longitude, lat_coords
 
     return coordinates_within_radius
 
+
 # Define the North Atlantic region (in degrees)
 lon_min, lon_max = -120, 0
 lat_min, lat_max = -5, 60
 
-#Convert image to numpy array
-image = Image.open('another_plot.jpg')
-width, height = image.size 
-image_gray = image.convert('L')
-gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
-grad_x = np.reshape(gradient_x, width * height)
-grad_y = np.reshape(gradient_y, width * height)
-
-lon_pts, lat_pts, x_pts, y_pts = numpy_coords(image)
-target_latitude = 19.0536        
-target_longitude = -71.5938
-radius_km = 30
-
-coordinates_within_radius = find_coordinates_around_target(target_latitude, target_longitude, lat_pts, lon_pts, radius_km)
-
-for target_latitude, target_longitude in coordinates_within_radius:
-    # Find the indices of the target coordinates in lat_pts and lon_pts
-    target_index = np.where((lat_pts == target_latitude) & (lon_pts == target_longitude))
-    
-    if len(target_index[0]) > 0:
-        target_x = x_pts[target_index[0][0]]
-        target_y = y_pts[target_index[0][0]]
-        print(f"For Latitude: {target_latitude}, Longitude: {target_longitude}")
-        print(f"Corresponding x point: {target_x}, y point: {target_y}")
-    else:
-        print(f"Coordinates ({target_latitude}, {target_longitude}) not found in the image.")
 
 
-array = np.load("DAVs\merg_2021081123_DAV.npy")
-print(array[156][145])
