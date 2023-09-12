@@ -7,8 +7,8 @@ from collections import deque
 from scipy import ndimage
 
 # Directory containing DAV numpy files
-dav_directory = "fyp_23-trop_cyclones/DAVs"
-image_directory = "fyp_23-trop_cyclones/Images"
+dav_directory = "DAVs"
+image_directory = "Images"
 
 # Set threshold values
 dav_threshold = 2400  # Adjust this threshold as needed
@@ -84,9 +84,9 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
     # Add a colorbar to indicate the scale
 
     # Subplot 2: Image
-    plt.subplot(1, 2, 2)
-    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))  # Display the loaded image
-    plt.title("Image")
+    #plt.subplot(1, 2, 2)
+    #plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))  # Display the loaded image
+    #plt.title("Image")
 
     # Remove axis labels
     for ax in plt.gcf().get_axes():
@@ -98,34 +98,54 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
     # Adjust subplot layout
     plt.tight_layout()
 
+    # Save the plot to a file
+    plot_filename = f"Clusters/{datetime_str}.png"
+    plt.savefig(plot_filename)
+
+    # Close the plot to release resources
+    plt.close()
+
     # Display the plot
-    plt.show()
+    #plt.show()
 
 # Define the start date and time
-start_datetime = datetime(2021, 8, 11, 0, 0)
+start_datetime = datetime(2021, 8, 1, 0, 0)  # Start from August 1, 2021, at 00:00
 
-# Define the number of hours you want to process
-num_hours = 24
+# Define the number of hours you want to process for each day
+hours_per_day = 24
 
-# Process and plot DAV arrays and images for specific hours
-for hour in range(num_hours):
-    # Format the hour as a string with leading zeros
-    hour_str = start_datetime.strftime("%Y%m%d%H")
+# Define the number of days you want to process data for (3 months)
+num_days = 90  # 30 days per month for 3 months
 
-    # Get the entire date as a string
-    datetime_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+# Process and plot DAV arrays and images for specific hours and days
+for day in range(num_days):
+    for hour in range(hours_per_day):
+        # Format the hour as a string with leading zeros
+        hour_str = start_datetime.strftime("%Y%m%d%H")
+
+        # Get the entire date as a string
+        datetime_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Construct the file path for the DAV numpy array
+        file_path = os.path.join(dav_directory, f"merg_{hour_str}_DAV.npy")
+
+        if not os.path.exists(file_path):
+            print(f"File not found for date: {datetime_str}")
+
+        # Load the numpy array from the file
+        dav_array = np.flipud(np.load(file_path))
+
+        # Construct the file path for the corresponding image
+        image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
+
+        if not os.path.exists(image_path):
+            print(f"Image not found for date: {datetime_str}")
+
+        # Process and plot the DAV array and image for the specific hour
+        process_and_plot_single_dav_array(dav_array, hour, image_path)
+
+        # Increment the datetime by one hour
+        start_datetime += timedelta(hours=1)
     
-    # Construct the file path for the DAV numpy array
-    file_path = os.path.join(dav_directory, f"merg_{hour_str}_DAV.npy")
-    
-    # Load the numpy array from the file
-    dav_array = np.flipud(np.load(file_path))
-    
-    # Construct the file path for the corresponding image
-    image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
-    
-    # Process and plot the DAV array and image for the specific hour
-    process_and_plot_single_dav_array(dav_array, hour, image_path)
-    
-    # Increment the datetime by one hour
-    start_datetime += timedelta(hours=1)
+    # Increment the datetime by one day (outside the inner loop)
+   # start_datetime += timedelta(days=1)
