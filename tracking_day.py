@@ -102,8 +102,16 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
     plot_filename = f"Clusters/{datetime_str}.png"
     plt.savefig(plot_filename)
 
+  # Generate a filename in the desired format (without colons)
+    filename_datetime_str = datetime_str.replace(":", "")
+    plot_filename = f"Clusters/{filename_datetime_str}.png"
+    
+    # Save the plot to the generated filename
+    plt.savefig(plot_filename)
+
     # Close the plot to release resources
     plt.close()
+
 
     # Display the plot
     #plt.show()
