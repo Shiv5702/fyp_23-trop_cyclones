@@ -63,7 +63,7 @@ def process_and_plot_single_dav_array(dav_array, hour, image_path):
     norm = plt.Normalize(vmin=np.min(dav_array), vmax=np.max(dav_array))
 
     # Subplot 1: Clusters
-    plt.imshow(dav_array, cmap=cmap, norm=norm, origin='upper')
+    plt.imshow(dav_array, cmap=cmap, norm=norm, origin='lower')
     tracked_clusters = track_clusters_bfs(dav_array, dav_threshold, min_cluster_size)
     for cluster in tracked_clusters:
         if len(cluster) >= min_cluster_size:
