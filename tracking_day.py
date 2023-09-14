@@ -106,7 +106,7 @@ start_datetime = datetime(2021, 8, 1, 0, 0)  # Start from August 1, 2021, at 00:
 hours_per_day = 24
 
 # Define the number of days you want to process data for (3 months)
-num_days = 90  # 30 days per month for 3 months
+num_days = 92
 
 # Process and plot DAV arrays and images for specific hours and days
 for day in range(num_days):
