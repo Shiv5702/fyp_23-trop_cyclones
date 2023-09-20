@@ -15,7 +15,7 @@ dav_threshold = 2400  # Adjust this threshold as needed
 min_cluster_size = 50  # Adjust this value as needed
 
 # Set the distance threshold for considering clusters as the same
-distance_threshold = 10  # Adjust this threshold as needed
+distance_threshold = 25  # Adjust this threshold as needed
 
 # Function to perform tracking
 def track_clusters_bfs(dav_array, fixed_threshold, min_cluster_size):
@@ -72,7 +72,7 @@ hours_per_day = 24
 num_days = 92
 
 # Create a CSV filename for the entire dataset
-csv_filename = "all_clusters_with_datetime.csv"
+csv_filename = "all_clusters_with_datetime1.csv"
 
 # Write the CSV header
 with open(csv_filename, 'w', newline='') as csvfile:
