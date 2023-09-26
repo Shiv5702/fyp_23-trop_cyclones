@@ -1,14 +1,18 @@
 import numpy as np
+import math
 
-def caluclate_intensity(dav_value):
-    alpha = 1859 * 10**-6
-    beta =  1400
+def calculate_intensity(dav_value):
+    alpha = 1859 * (10**-6)
+    beta =  1437
 
     lower_limit = 25
     upper_limit = 140
 
-    exponent = np.exp(alpha * (dav_value - beta))
+    # exponent = np.exp(alpha * (dav_value - beta))
+    z = alpha*(dav_value - beta)
+    my_exp = math.exp(z)
 
-    intensity = (upper_limit/(1 + exponent)) + lower_limit
+    intensity = (upper_limit/(1 + my_exp)) + lower_limit
 
     return intensity
+

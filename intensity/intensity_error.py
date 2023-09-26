@@ -6,6 +6,23 @@ from PIL import Image
 from find_coord import *
 from datetime import datetime, timedelta
 import os
+# from storm_ib_tracks import organize_storm_data, interpolate_and_add_variables
+import pprint
+
+# storm_directory = 'intensity/IB_Extracted'
+
+# storms_data = organize_storm_data(storm_directory)
+
+
+# # Loop through the storm data
+# for storm in storms_data:
+#     for date, day_data in storm['days'].items():
+#         # Call the function to interpolate and add variables
+#         interpolated_data = interpolate_and_add_variables(day_data)
+#         # Update the day's data with the interpolated data
+#         storm['days'][date] = interpolated_data
+
+
 
 def calculate_rms_error(known_intensity, calculated_intensity):
     # Calculate the RMS error
@@ -16,31 +33,24 @@ def calculate_rms_error(known_intensity, calculated_intensity):
 
 
 
-
-
-
-
-
 # Original data points 
 original_times = [0, 3, 6, 9, 12, 15, 18, 21]  
-
 original_values = [35,35,35,37,40,40,35,32]
-
-new_times = np.arange(0, 24, 1)  
-
-# Perform linear interpolation
-interpolated_values = np.interp(new_times, original_times, original_values)
-
-
 
 latitudes = [17.3,17.5223,17.7,17.842,18,18.219,18.5,18.83]  
 longitudes = [-66.1,-66.8577,-67.6,-68.3142,-69,-69.606,-70.4,-71.1238]  
 
+new_times = np.arange(0, 24, 1)  # new_times = [0,1,2,3,4,5...23]
+
+# Perform linear interpolation
+interpolated_values = np.interp(new_times, original_times, original_values) # 24 values interpolated of WIND
+
+
 # Create an array of time points for the measurements
-time_points = np.arange(0, 24, 3)  
+time_points = np.arange(0, 24, 3)  # [ 0  3  6  9 12 15 18 21]
 
 
-interpolation_time_points = np.arange(0, 24, 1)  
+interpolation_time_points = np.arange(0, 24, 1)  # [0,1,2,3,4,5...23]
 
 # Initialize empty lists for interpolated coordinates
 interpolated_latitudes = []
@@ -49,6 +59,7 @@ interpolated_longitudes = []
 # Create cubic spline functions for latitude and longitude
 spline_lat = CubicSpline(time_points, latitudes, bc_type='natural')
 spline_lon = CubicSpline(time_points, longitudes, bc_type='natural')
+
 
 # Interpolate coordinates for each interpolation_time_point
 for t in interpolation_time_points:
@@ -59,6 +70,9 @@ for t in interpolation_time_points:
     # Append the interpolated values to the lists
     interpolated_latitudes.append(interpolated_lat)
     interpolated_longitudes.append(interpolated_lon)
+
+# interpolated_latitudes & interpolated_longitudes hold 24 values of lat/lon
+
 
 # Directory containing DAV numpy files
 dav_directory = "DAVs/"
@@ -92,9 +106,9 @@ for hour in range(num_hours):
     # Construct the file path for the corresponding image
     image_path = os.path.join(image_directory, f"merg_{hour_str}.jpg")
 
-        #Convert image to numpy array
+    #Convert image to numpy array
     image = Image.open(image_path)
-    width, height = image.size 
+    width, height = image.size
     image_gray = image.convert('L')
     gradient_x, gradient_y = sobel_task1.apply_sobel_filter(np.array(image))
     grad_x = np.reshape(gradient_x, width * height)
