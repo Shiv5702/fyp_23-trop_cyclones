@@ -6,7 +6,7 @@ def calculate_intensity(dav_value):
     beta =  1437
 
     lower_limit = 25
-    upper_limit = 140
+    upper_limit = 165
 
     # exponent = np.exp(alpha * (dav_value - beta))
     z = alpha*(dav_value - beta)

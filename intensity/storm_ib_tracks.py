@@ -238,17 +238,22 @@ while start_datetime <= end_datetime:
                             else:
                                 print(f"Coordinates ({target_latitude}, {target_longitude}) not found in the image.")
 
-                        total = 0  
+                        total = 0 
+                        hh = len(xy_coords)
+                        if hh == 0:
+                            flag = True
+                            
                         for x,y in xy_coords:
                             try:
-                                total = total + dav_array[int(x)][int(y)]
+                                total = total + dav_array[int(y)][int(x)]
                             except IndexError:
                                 flag = True
                                 my_counter +=1
                                 break 
                         if flag: 
                             break
-                        avg_dav = total/len(xy_coords)
+                        
+                        avg_dav = total/hh
                         dav_values.append(avg_dav)
                         i = i+1
                     if flag:
@@ -273,60 +278,60 @@ while start_datetime <= end_datetime:
 # # # print(my_counter)
 
 # # Define the start and end dates for the range you want to print
-start_date = datetime(2021, 8, 1)
+start_date = datetime(2021, 10, 23)
 end_date = datetime(2021, 11, 1)
 
 
 
 
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 
-# # Loop through the data grouped by storm
-# for storm_name, storm_dates in storm_data_grouped.items():
-#     print(f"Storm: {storm_name}")
+# Loop through the data grouped by storm
+for storm_name, storm_dates in storm_data_grouped.items():
+    print(f"Storm: {storm_name}")
     
-#     # Loop through the dates for each storm
-#     for date, data_for_date in storm_dates.items():
-#         # Convert the date string to a datetime object
-#         date = str(date)
-#         date_obj = datetime.strptime(date, '%Y-%m-%d')
+    # Loop through the dates for each storm
+    for date, data_for_date in storm_dates.items():
+        # Convert the date string to a datetime object
+        date = str(date)
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
 
-#         # Check if the date falls within the desired range
-#         if start_date <= date_obj <= end_date:
-#             print(f"Date: {date}")
+        # Check if the date falls within the desired range
+        if start_date <= date_obj <= end_date:
+            print(f"Date: {date}")
             
-#             # Print the data for the current date, including the new variables
-#             print(f"original_Times: {data_for_date['original_times']}")
-#             print(f"original_Values: {data_for_date['original_values']}")
-#             print(f"Latitudes: {data_for_date['latitudes']}")
-#             print(f"Longitudes: {data_for_date['longitudes']}")
+            # Print the data for the current date, including the new variables
+            print(f"original_Times: {data_for_date['original_times']}")
+            print(f"original_Values: {data_for_date['original_values']}")
+            print(f"Latitudes: {data_for_date['latitudes']}")
+            print(f"Longitudes: {data_for_date['longitudes']}")
             
-#             # New variables
-#             print(f"new_Times: {data_for_date['new_times']}")
-#             print(f"interpolated_Values: {data_for_date['interpolated_values']}")
-#             print(f"time_points: {data_for_date['time_points']}")
-#             print(f"interpolation_time_points: {data_for_date['interpolation_time_points']}")
-#             print(f"interpolated_Latitudes: {data_for_date['interpolated_latitudes']}")
-#             print(f"interpolated_Longitudes: {data_for_date['interpolated_longitudes']}")
-#             print(f"Intensity: {data_for_date['calculated_intensity']}")
-#             print(f"RMS: {data_for_date['rms']}")
+            # New variables
+            print(f"new_Times: {data_for_date['new_times']}")
+            print(f"interpolated_Values: {data_for_date['interpolated_values']}")
+            print(f"time_points: {data_for_date['time_points']}")
+            print(f"interpolation_time_points: {data_for_date['interpolation_time_points']}")
+            print(f"interpolated_Latitudes: {data_for_date['interpolated_latitudes']}")
+            print(f"interpolated_Longitudes: {data_for_date['interpolated_longitudes']}")
+            print(f"Intensity: {data_for_date['calculated_intensity']}")
+            print(f"RMS: {data_for_date['rms']}")
             
-#             # Create og_time_date by combining the date_obj and original_times
-#             original_times = data_for_date['original_times']
-#             og_time_date = [date_obj + timedelta(hours=int(time)) for time in original_times]
-#             print(f"og_time_date: {og_time_date}")
+            # Create og_time_date by combining the date_obj and original_times
+            original_times = data_for_date['original_times']
+            og_time_date = [date_obj + timedelta(hours=int(time)) for time in original_times]
+            print(f"og_time_date: {og_time_date}")
 
 
 
-#             # Create intensity_time if 'calculated_intensity' is not empty
-#             calculated_intensity = data_for_date['calculated_intensity']
-#             if calculated_intensity:
-#                 intensity_time = [date_obj.replace(hour=i) for i in range(24)]
-#                 print(f"intensity_time: {intensity_time}")
+            # Create intensity_time if 'calculated_intensity' is not empty
+            calculated_intensity = data_for_date['calculated_intensity']
+            if calculated_intensity:
+                intensity_time = [date_obj.replace(hour=i) for i in range(24)]
+                print(f"intensity_time: {intensity_time}")
             
-#             print("-" * 20)  # Separate data for different dates
+            print("-" * 20)  # Separate data for different dates
 
-#     print("=" * 20)  # Separate data for different storms
+    print("=" * 20)  # Separate data for different storms
 ##################################################################################################
 
 # BELOW WORKSSSSSS #####
@@ -334,88 +339,147 @@ end_date = datetime(2021, 11, 1)
 
 ######################################################################################################
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
-# Define the x-axis limits (start_date and end_date)
-x_axis_limits = (start_date, end_date)
+# # Define the x-axis limits (start_date and end_date)
+# x_axis_limits = (start_date, end_date)
 
-# Calculate the number of rows and columns based on the number of storms
-num_storms = len(storm_data_grouped)
-num_rows = num_storms // 2  # Organize into 2 columns
-if num_storms % 2 != 0:
-    num_rows += 1  # Add an extra row for odd number of storms
-num_cols = 2  # 2 columns
+# # Calculate the number of rows and columns based on the number of storms
+# num_storms = len(storm_data_grouped)
+# num_rows = num_storms // 2  # Organize into 2 columns
+# if num_storms % 2 != 0:
+#     num_rows += 1  # Add an extra row for odd number of storms
+# num_cols = 2  # 2 columns
 
-# Create a figure with subplots organized into a grid
-fig, axs = plt.subplots(num_rows, num_cols, figsize=(12, 6 * num_rows))
+# # Create a figure with subplots organized into a grid
+# fig, axs = plt.subplots(num_rows, num_cols, figsize=(12, 6 * num_rows))
 
-# Flatten the axs array to make it easier to loop through
-axs = axs.flatten()
+# # Flatten the axs array to make it easier to loop through
+# axs = axs.flatten()
 
-# Loop through the data grouped by storm
-for i, (storm_name, storm_dates) in enumerate(storm_data_grouped.items()):
-    ax = axs[i]  # Select the current subplot
+# # Loop through the data grouped by storm
+# for i, (storm_name, storm_dates) in enumerate(storm_data_grouped.items()):
+#     ax = axs[i]  # Select the current subplot
     
-    # Initialize lists to store blue (original_values) and red (calculated_intensity) data
-    blue_x_data = []
-    blue_y_data = []
-    red_x_data = []
-    red_y_data = []
+#     # Initialize lists to store blue (original_values) and red (calculated_intensity) data
+#     blue_x_data = []
+#     blue_y_data = []
+#     red_x_data = []
+#     red_y_data = []
     
-    # Loop through the dates for the current storm
-    for date, data_for_date in storm_dates.items():
-        # Convert the date string to a datetime object
-        date = str(date)
-        date_obj = datetime.strptime(date, '%Y-%m-%d')
+#     # Loop through the dates for the current storm
+#     for date, data_for_date in storm_dates.items():
+#         # Convert the date string to a datetime object
+#         date = str(date)
+#         date_obj = datetime.strptime(date, '%Y-%m-%d')
         
-        # Check if the date falls within the desired range
-        if start_date <= date_obj <= end_date:
-            # Create og_time_date by combining the date_obj and original_times
-            original_times = data_for_date['original_times']
-            og_time_date = [date_obj + timedelta(hours=int(time)) for time in original_times]
+#         # Check if the date falls within the desired range
+#         if start_date <= date_obj <= end_date:
+#             # Create og_time_date by combining the date_obj and original_times
+#             original_times = data_for_date['original_times']
+#             og_time_date = [date_obj + timedelta(hours=int(time)) for time in original_times]
             
-            # Check if calculated_intensity is not empty
-            if data_for_date['calculated_intensity']:
-                # Create intensity_time
-                intensity_time = [date_obj.replace(hour=i) for i in range(24)]
-                # Append og_time_date and original_values to the blue data lists
-                blue_x_data.extend(og_time_date)
-                blue_y_data.extend(data_for_date['original_values'])
-                # Append intensity_time and calculated_intensity to the red data lists
-                red_x_data.extend(intensity_time)
-                red_y_data.extend(data_for_date['calculated_intensity'])
+#             # Check if calculated_intensity is not empty
+#             if data_for_date['calculated_intensity']:
+#                 # Create intensity_time
+#                 intensity_time = [date_obj.replace(hour=i) for i in range(24)]
+#                 # Append og_time_date and original_values to the blue data lists
+#                 blue_x_data.extend(og_time_date)
+#                 blue_y_data.extend(data_for_date['original_values'])
+#                 # Append intensity_time and calculated_intensity to the red data lists
+#                 red_x_data.extend(intensity_time)
+#                 red_y_data.extend(data_for_date['calculated_intensity'])
     
-    # Plot original_values against og_time_date as a line graph in blue
-    if blue_x_data and blue_y_data:
-        ax.plot(blue_x_data, blue_y_data, linestyle='-', color='blue', label='Original Values')
+#     # Plot original_values against og_time_date as a line graph in blue
+#     if blue_x_data and blue_y_data:
+#         ax.plot(blue_x_data, blue_y_data, linestyle='-', color='blue', label='Original Values')
     
-    # Plot calculated_intensity against intensity_time as a line graph in red
-    if red_x_data and red_y_data:
-        ax.plot(red_x_data, red_y_data, linestyle='-', color='red', label='Calculated Intensity')
+#     # Plot calculated_intensity against intensity_time as a line graph in red
+#     if red_x_data and red_y_data:
+#         ax.plot(red_x_data, red_y_data, linestyle='-', color='red', label='Calculated Intensity')
     
-    ax.set_title(f"Storm: {storm_name}")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Values")
+#     ax.set_title(f"Storm: {storm_name}")
+#     ax.set_xlabel("Time")
+#     ax.set_ylabel("Values")
     
-    # Set the same x-axis limits for all subplots
-    ax.set_xlim(x_axis_limits)
+#     # Set the same x-axis limits for all subplots
+#     ax.set_xlim(x_axis_limits)
     
-    # Add a legend to the subplot
-    ax.legend()
+#     # Add a legend to the subplot
+#     ax.legend()
 
-# Remove any empty subplots
-for i in range(num_storms, num_rows * num_cols):
-    fig.delaxes(axs[i])
+# # Remove any empty subplots
+# for i in range(num_storms, num_rows * num_cols):
+#     fig.delaxes(axs[i])
 
-# Adjust spacing between subplots for even spacing
-plt.subplots_adjust(hspace=0)  # You can adjust the value to control vertical spacing
+# # Adjust spacing between subplots for even spacing
+# plt.subplots_adjust(hspace=0)  # You can adjust the value to control vertical spacing
 
-# Show the plot
-plt.show()
-
-
+# # Show the plot
+# plt.show()
 
 
+
+
+# import matplotlib.pyplot as plt
+
+# # Define the x-axis limits (start_date and end_date)
+# x_axis_limits = (start_date, end_date)
+
+# # Create a figure for the single plot
+# fig, ax = plt.subplots(figsize=(12, 6))
+
+# # Initialize lists to store blue (original_values) and red (calculated_intensity) data
+# blue_x_data = []
+# blue_y_data = []
+# red_x_data = []
+# red_y_data = []
+
+# # Loop through the data for the 'Kate' storm
+# storm_name = 'WANDA'
+# storm_dates = storm_data_grouped.get(storm_name, {})  # Get data for 'Kate' or an empty dictionary if not found
+# for date, data_for_date in storm_dates.items():
+#     # Convert the date string to a datetime object
+#     date = str(date)
+#     date_obj = datetime.strptime(date, '%Y-%m-%d')
+
+#     # Check if the date falls within the desired range
+#     if start_date <= date_obj <= end_date:
+#         # Create og_time_date by combining the date_obj and original_times
+#         original_times = data_for_date['original_times']
+#         og_time_date = [date_obj + timedelta(hours=int(time)) for time in original_times]
+
+#         # Check if calculated_intensity is not empty
+#         if data_for_date['calculated_intensity']:
+#             # Create intensity_time
+#             intensity_time = [date_obj.replace(hour=i) for i in range(24)]
+#             # Append og_time_date and original_values to the blue data lists
+#             blue_x_data.extend(og_time_date)
+#             blue_y_data.extend(data_for_date['original_values'])
+#             # Append intensity_time and calculated_intensity to the red data lists
+#             red_x_data.extend(intensity_time)
+#             red_y_data.extend(data_for_date['calculated_intensity'])
+
+# # Plot original_values against og_time_date as a line graph in blue
+# if blue_x_data and blue_y_data:
+#     ax.plot(blue_x_data, blue_y_data, linestyle='-', color='blue', label='Original Values')
+
+# # Plot calculated_intensity against intensity_time as a line graph in red
+# if red_x_data and red_y_data:
+#     ax.plot(red_x_data, red_y_data, linestyle='-', color='red', label='Calculated Intensity')
+
+# ax.set_title(f"Storm: {storm_name}")
+# ax.set_xlabel("Time")
+# ax.set_ylabel("Values")
+
+# # Set the x-axis limits
+# ax.set_xlim(x_axis_limits)
+
+# # Add a legend to the plot
+# ax.legend()
+
+# # Show the single plot for the 'Kate' storm
+# plt.show()
 
 
 
